@@ -1,4 +1,3 @@
-
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 
 const Footer = () => {
@@ -8,9 +7,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <div className="text-2xl font-bold mb-4">
-              <span className="text-coral">digital</span>
-              <span className="text-white">migrate</span>
-              <span className="text-mint">pro</span>
+              <span className="text-coral">port</span>
+              <span className="text-white">ify</span>
             </div>
             <p className="text-gray-300 mb-4">
               Move your digital products anywhere, instantly. Easy transfers between platforms with AI assistance.
@@ -88,7 +86,7 @@ const Footer = () => {
         
         <div className="mt-12 pt-8 border-t border-gray-700 text-center">
           <p className="text-gray-400">
-            &copy; {new Date().getFullYear()} DigitalMigratePro. All rights reserved.
+            &copy; {new Date().getFullYear()} Portify. All rights reserved.
           </p>
         </div>
       </div>

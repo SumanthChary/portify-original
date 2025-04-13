@@ -79,7 +79,7 @@ const HeroSection = () => {
                           <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                           <div className="w-3 h-3 rounded-full bg-green-500"></div>
                         </div>
-                        <div className="text-white text-xs">DigitalMigratePro</div>
+                        <div className="text-white text-xs">Portify</div>
                         <div className="text-white text-xs">9:41 AM</div>
                       </div>
                       

@@ -17,6 +17,46 @@ export interface GumroadProduct {
 
 export class GumroadService {
   private apiKey: string | null = null;
+  private appId = "CAhiRwpTAZBDnjZoDCRe-uawd7Okkloe4WSxqc-0ABw";
+  private appSecret = "_--WNQRuGaGw5uNRkg8RJuiD23ITgjL6hAOA50aXw9g";
+  private redirectUri = "https://portify-original.lovable.app";
+  private accessToken: string | null = null;
+  
+  constructor() {
+    // Check if we have a stored access token in localStorage
+    const storedToken = localStorage.getItem('gumroad_access_token');
+    if (storedToken) {
+      this.accessToken = storedToken;
+      console.log("Loaded Gumroad access token from storage");
+    }
+  }
+  
+  /**
+   * Get the OAuth authorization URL
+   */
+  public getAuthUrl(): string {
+    return `https://gumroad.com/oauth/authorize?client_id=${this.appId}&redirect_uri=${encodeURIComponent(this.redirectUri)}&scope=view_profile`;
+  }
+  
+  /**
+   * Handle the OAuth callback and exchange code for token
+   */
+  public async handleAuthCallback(code: string): Promise<boolean> {
+    try {
+      // In a real implementation, this would be done on the server side
+      // For security reasons, the app secret should never be exposed to the client
+      console.log("Exchanging code for token...");
+      
+      // Simulating successful token exchange
+      this.accessToken = "1_hFYYKL2sfvDhXZtxF81xcgbwmSTTepvXo8anbdSO8";
+      localStorage.setItem('gumroad_access_token', this.accessToken);
+      
+      return true;
+    } catch (error) {
+      console.error("Failed to exchange code for token", error);
+      return false;
+    }
+  }
   
   /**
    * Set the API key for Gumroad authentication
@@ -30,7 +70,7 @@ export class GumroadService {
    * Check if the API key is set
    */
   public isAuthenticated(): boolean {
-    return !!this.apiKey;
+    return !!this.accessToken || !!this.apiKey;
   }
   
   /**
@@ -38,12 +78,12 @@ export class GumroadService {
    * In a real implementation, this would make an actual API call
    */
   public async getProducts(): Promise<GumroadProduct[]> {
-    if (!this.apiKey) {
-      throw new Error("Gumroad API key not set. Please authenticate first.");
+    if (!this.isAuthenticated()) {
+      throw new Error("Gumroad API key or access token not set. Please authenticate first.");
     }
     
     // This is a mock implementation that would be replaced with an actual API call
-    // For example: return fetch('https://api.gumroad.com/v2/products', { headers: { 'Authorization': `Bearer ${this.apiKey}` } })
+    // For example: return fetch('https://api.gumroad.com/v2/products', { headers: { 'Authorization': `Bearer ${this.accessToken}` } })
     console.log("Fetching products from Gumroad API...");
     
     // Simulate API response
@@ -81,8 +121,8 @@ export class GumroadService {
    * This is a placeholder for the actual migration functionality
    */
   public async migrateProduct(productId: string, targetPlatform: string): Promise<boolean> {
-    if (!this.apiKey) {
-      throw new Error("Gumroad API key not set. Please authenticate first.");
+    if (!this.isAuthenticated()) {
+      throw new Error("Gumroad API key or access token not set. Please authenticate first.");
     }
     
     console.log(`Migrating product ${productId} to ${targetPlatform}...`);
@@ -93,6 +133,13 @@ export class GumroadService {
         resolve(true);
       }, 2000);
     });
+  }
+  
+  /**
+   * Initialize OAuth flow
+   */
+  public startOAuthFlow(): void {
+    window.location.href = this.getAuthUrl();
   }
 }
 

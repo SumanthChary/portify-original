@@ -15,10 +15,9 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
-            <div className="text-2xl font-bold text-coral">
-              <span>digital</span>
-              <span className="text-darktext">migrate</span>
-              <span className="text-mint">pro</span>
+            <div className="text-2xl font-bold">
+              <span className="text-coral">port</span>
+              <span className="text-darktext">ify</span>
             </div>
           </div>
           
