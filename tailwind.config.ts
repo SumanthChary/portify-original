@@ -109,8 +109,17 @@ export default {
 				'cta-gradient': 'linear-gradient(90deg, #FF6B35, #FF3B3F)',
 			},
 			fontFamily: {
-				poppins: ["Poppins", "sans-serif"],
-				inter: ["Inter", "sans-serif"],
+				// Update font definitions to use San Francisco
+				sans: [
+					'"SF Pro Display"', 
+					'"SF Pro Text"', 
+					'-apple-system', 
+					'BlinkMacSystemFont', 
+					'system-ui', 
+					'sans-serif'
+				],
+				poppins: ['"SF Pro Display"', '-apple-system', 'system-ui', 'sans-serif'],
+				inter: ['"SF Pro Text"', '-apple-system', 'system-ui', 'sans-serif'],
 			},
 		},
 	},

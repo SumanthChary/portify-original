@@ -123,10 +123,6 @@ const HeroSection = () => {
                 {/* MacBook Bottom */}
                 <div className="macbook-bottom bg-gray-100 h-3 rounded-b-xl mx-auto w-[90%] border-b border-l border-r border-gray-300 shadow-lg"></div>
               </div>
-              
-              <div className="absolute -bottom-6 -right-6 bg-coral text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg">
-                Powered by OpenAI
-              </div>
             </div>
           </div>
         </div>

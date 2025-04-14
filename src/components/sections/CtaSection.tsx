@@ -1,9 +1,9 @@
 
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import gumroadService from "@/services/GumroadService";
-import { useEffect } from "react";
 
 const CtaSection = () => {
   const [connecting, setConnecting] = useState(false);
@@ -20,9 +20,17 @@ const CtaSection = () => {
     
     if (code) {
       setConnecting(true);
+      toast.loading("Connecting to Gumroad...");
+      
       gumroadService.handleAuthCallback(code).then((success) => {
         setConnected(success);
         setConnecting(false);
+        
+        if (success) {
+          toast.success("Successfully connected to Gumroad!");
+        } else {
+          toast.error("Failed to connect to Gumroad. Please try again.");
+        }
         
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -39,6 +47,7 @@ const CtaSection = () => {
     } catch (error) {
       console.error("Failed to start OAuth flow", error);
       setConnecting(false);
+      toast.error("Failed to connect to Gumroad. Please try again.");
     }
   };
 
