@@ -1,3 +1,4 @@
+
 /**
  * Gumroad API Service
  * This is a basic implementation for connecting to the Gumroad API.
@@ -17,6 +18,7 @@ export interface GumroadProduct {
 
 export class GumroadService {
   private accessToken: string | null = null;
+  private apiKey: string | null = null; // Added missing apiKey property
   private mockProducts: GumroadProduct[] = [
     {
       id: "prod_1",
@@ -131,6 +133,14 @@ export class GumroadService {
   }
   
   /**
+   * Simulate auth for demo purposes
+   */
+  public simulateAuth(): void {
+    this.accessToken = "demo_token_123456";
+    localStorage.setItem("gumroad_token", this.accessToken);
+  }
+
+  /**
    * Get products from Gumroad
    * In a real implementation, this would make an actual API call
    */
@@ -216,20 +226,6 @@ export class GumroadService {
    */
   public startOAuthFlow(): void {
     window.location.href = this.getAuthUrl();
-  }
-
-  // Simulate auth for demo purposes
-  public simulateAuth(): void {
-    this.accessToken = "demo_token_123456";
-    localStorage.setItem("gumroad_token", this.accessToken);
-  }
-
-  // Mock product fetching for demo
-  public async getProducts(): Promise<GumroadProduct[]> {
-    // In a real app, we would fetch from Gumroad API
-    // For demo, return mock data
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-    return this.mockProducts;
   }
 }
 
