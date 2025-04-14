@@ -1,15 +1,16 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Clock } from "lucide-react";
+import { ArrowRight, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { GumroadProduct } from "@/services/GumroadService";
 
 interface ProductCardProps {
   product: GumroadProduct;
   status: "pending" | "migrating" | "completed";
   onMigrate: () => void;
+  webhookReady: boolean;
 }
 
-const ProductCard = ({ product, status, onMigrate }: ProductCardProps) => {
+const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardProps) => {
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -45,9 +46,20 @@ const ProductCard = ({ product, status, onMigrate }: ProductCardProps) => {
               onClick={onMigrate}
               size="sm"
               className="bg-cta-gradient hover:opacity-90 text-white"
+              disabled={!webhookReady}
+              title={!webhookReady ? "Test webhook connection first" : "Start migration"}
             >
-              Migrate
-              <ArrowRight size={16} className="ml-1" />
+              {!webhookReady ? (
+                <>
+                  <AlertCircle size={16} className="mr-1" />
+                  Configure n8n
+                </>
+              ) : (
+                <>
+                  Migrate
+                  <ArrowRight size={16} className="ml-1" />
+                </>
+              )}
             </Button>
           )}
           

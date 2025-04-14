@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { ArrowRight, CheckCircle, Clock, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import gumroadService, { GumroadProduct } from "@/services/GumroadService";
 import ProductCard from "./ProductCard";
 import WorkflowVisualizer from "./WorkflowVisualizer";
@@ -13,6 +14,8 @@ const MigrationDashboard = () => {
   const [migratingProducts, setMigratingProducts] = useState<string[]>([]);
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [isWebhookTested, setIsWebhookTested] = useState(false);
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
   useEffect(() => {
     fetchGumroadProducts();
@@ -31,9 +34,50 @@ const MigrationDashboard = () => {
     }
   };
 
+  const testWebhook = async () => {
+    if (!webhookUrl) {
+      toast.error("Please enter an n8n webhook URL");
+      return;
+    }
+
+    setIsTestingWebhook(true);
+    toast.loading("Testing webhook connection...");
+
+    try {
+      // Send a test request to the webhook
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          test: true,
+          message: "Test connection from Portify"
+        }),
+      });
+
+      if (response.ok) {
+        setIsWebhookTested(true);
+        toast.success("Webhook connection successful!");
+      } else {
+        toast.error("Failed to connect to webhook. Please check the URL and try again.");
+      }
+    } catch (error) {
+      console.error("Webhook test failed:", error);
+      toast.error("Failed to connect to webhook. Please check the URL and try again.");
+    } finally {
+      setIsTestingWebhook(false);
+    }
+  };
+
   const startMigration = async (productId: string) => {
     if (!webhookUrl) {
       toast.error("Please enter an n8n webhook URL to start the migration");
+      return;
+    }
+
+    if (!isWebhookTested) {
+      toast.warning("Please test the webhook connection first");
       return;
     }
 
@@ -57,10 +101,17 @@ const MigrationDashboard = () => {
             name: product.name,
             price: product.price,
             description: product.description,
-            url: product.url
-          }
+            url: product.url,
+            image: product.image
+          },
+          user_id: "user_" + Date.now(),
+          email: "user@example.com"
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       // Simulate migration process
       setTimeout(() => {
@@ -82,6 +133,11 @@ const MigrationDashboard = () => {
       return;
     }
 
+    if (!isWebhookTested) {
+      toast.warning("Please test the webhook connection first");
+      return;
+    }
+
     products.forEach(product => {
       if (!migratingProducts.includes(product.id) && !completedProducts.includes(product.id)) {
         startMigration(product.id);
@@ -90,7 +146,7 @@ const MigrationDashboard = () => {
   };
 
   return (
-    <div className="section-container">
+    <div className="section-container py-8">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">Product Migration Dashboard</h1>
         <p className="text-lg text-coolGray">
@@ -108,18 +164,39 @@ const MigrationDashboard = () => {
             type="text"
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://your-n8n-instance.com/webhook/..."
+            placeholder="https://your-n8n-instance.com/webhook/gumroad-migration"
             className="flex-grow px-4 py-2 border border-gray-300 rounded-md"
           />
           <Button 
             variant="outline" 
-            onClick={fetchGumroadProducts}
-            disabled={isLoading}
+            onClick={testWebhook}
+            disabled={isTestingWebhook || !webhookUrl}
             className="inline-flex items-center"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh Products
+            {isTestingWebhook ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : isWebhookTested ? (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                Verified
+              </>
+            ) : (
+              <>
+                <Info className="mr-2 h-4 w-4" />
+                Test Connection
+              </>
+            )}
           </Button>
+        </div>
+        
+        <div className="mt-4 text-sm text-coolGray">
+          <p className="flex items-center">
+            <Info className="h-4 w-4 mr-1 text-mint" />
+            Don't have an n8n instance? <a href="https://n8n.io" target="_blank" rel="noopener noreferrer" className="text-coral ml-1 hover:underline">Sign up for free at n8n.io</a>
+          </p>
         </div>
       </div>
 
@@ -130,7 +207,7 @@ const MigrationDashboard = () => {
           <h2 className="text-xl font-semibold">Your Gumroad Products</h2>
           <Button 
             onClick={startAllMigrations}
-            disabled={products.length === 0 || !webhookUrl}
+            disabled={products.length === 0 || !webhookUrl || !isWebhookTested}
             className="mt-2 sm:mt-0 bg-cta-gradient hover:opacity-90"
           >
             Migrate All Products
@@ -160,10 +237,23 @@ const MigrationDashboard = () => {
                     : "pending"
                 }
                 onMigrate={() => startMigration(product.id)}
+                webhookReady={!!webhookUrl && isWebhookTested}
               />
             ))}
           </div>
         )}
+      </div>
+      
+      <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-100">
+        <h2 className="text-xl font-semibold mb-4">Need Help Setting Up n8n?</h2>
+        <p className="text-coolGray mb-4">
+          Follow our step-by-step guide to create the perfect n8n workflow for migrating your products.
+        </p>
+        <Link to="/n8n-guide">
+          <Button className="bg-coral hover:bg-coral/90">
+            View n8n Setup Guide
+          </Button>
+        </Link>
       </div>
     </div>
   );
