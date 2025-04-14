@@ -18,7 +18,7 @@ export interface GumroadProduct {
 
 export class GumroadService {
   private accessToken: string | null = null;
-  private apiKey: string | null = null; // Added missing apiKey property
+  private apiKey: string | null = null;
   private mockProducts: GumroadProduct[] = [
     {
       id: "prod_1",
@@ -137,7 +137,7 @@ export class GumroadService {
    */
   public simulateAuth(): void {
     this.accessToken = "demo_token_123456";
-    localStorage.setItem("gumroad_token", this.accessToken);
+    localStorage.setItem('gumroad_access_token', this.accessToken);
   }
 
   /**
@@ -150,10 +150,9 @@ export class GumroadService {
     }
     
     // This is a mock implementation that would be replaced with an actual API call
-    // For example: return fetch('https://api.gumroad.com/v2/products', { headers: { 'Authorization': `Bearer ${this.accessToken}` } })
     console.log("Fetching products from Gumroad API...");
     
-    // Simulate API response
+    // Simulate API response with a delay
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([
