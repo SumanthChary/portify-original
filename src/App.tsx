@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import N8nGuide from "./pages/N8nGuide";
+import "./App.css";
 
 const queryClient = new QueryClient();
 

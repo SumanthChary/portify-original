@@ -13,6 +13,16 @@ const Dashboard = () => {
   useEffect(() => {
     // Check if user is authenticated with Gumroad
     const authenticated = gumroadService.isAuthenticated();
+    
+    // For demo purposes, we'll auto-authenticate if not authenticated
+    if (!authenticated) {
+      toast.success("Demo mode: Auto-connecting to Gumroad for preview");
+      gumroadService.simulateAuth();
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return;
+    }
+    
     setIsAuthenticated(authenticated);
     setIsLoading(false);
     
@@ -41,7 +51,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col font-sans">
       <Header />
       <main className="flex-grow bg-offwhite">
         {isLoading ? (
