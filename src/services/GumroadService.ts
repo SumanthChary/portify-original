@@ -12,6 +12,7 @@ export interface GumroadProduct {
   price: number;
   description: string;
   url: string;
+  image?: string;
   // Add other product fields as needed
 }
 
@@ -59,6 +60,13 @@ export class GumroadService {
   }
   
   /**
+   * Get the access token (for sending to n8n webhook)
+   */
+  public getAccessToken(): string | null {
+    return this.accessToken;
+  }
+  
+  /**
    * Set the API key for Gumroad authentication
    */
   public setApiKey(apiKey: string): void {
@@ -95,21 +103,40 @@ export class GumroadService {
             name: "Digital Marketing Guide",
             price: 19.99,
             description: "Complete guide to digital marketing strategies",
-            url: "https://gumroad.com/l/digital-marketing"
+            url: "https://gumroad.com/l/digital-marketing",
+            image: "https://picsum.photos/seed/dm1/600/400"
           },
           {
             id: "prod_2",
             name: "UI Design Templates",
             price: 29.99,
             description: "Premium Figma UI kit for modern web design",
-            url: "https://gumroad.com/l/ui-templates"
+            url: "https://gumroad.com/l/ui-templates",
+            image: "https://picsum.photos/seed/ui2/600/400"
           },
           {
             id: "prod_3",
             name: "JavaScript Course",
             price: 59.99,
             description: "Advanced JavaScript techniques and patterns",
-            url: "https://gumroad.com/l/js-course"
+            url: "https://gumroad.com/l/js-course",
+            image: "https://picsum.photos/seed/js3/600/400"
+          },
+          {
+            id: "prod_4",
+            name: "SEO Mastery Bundle",
+            price: 45.00,
+            description: "Complete SEO toolkit to rank higher on Google",
+            url: "https://gumroad.com/l/seo-mastery",
+            image: "https://picsum.photos/seed/seo4/600/400"
+          },
+          {
+            id: "prod_5",
+            name: "Social Media Marketing Templates",
+            price: 24.99,
+            description: "Ready-to-use templates for Instagram, Facebook, and Twitter",
+            url: "https://gumroad.com/l/social-templates",
+            image: "https://picsum.photos/seed/sm5/600/400"
           }
         ]);
       }, 1000);

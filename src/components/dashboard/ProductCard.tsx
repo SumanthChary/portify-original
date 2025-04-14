@@ -1,0 +1,68 @@
+
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckCircle, Clock } from "lucide-react";
+import { GumroadProduct } from "@/services/GumroadService";
+
+interface ProductCardProps {
+  product: GumroadProduct;
+  status: "pending" | "migrating" | "completed";
+  onMigrate: () => void;
+}
+
+const ProductCard = ({ product, status, onMigrate }: ProductCardProps) => {
+  return (
+    <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+      <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+        {product.image ? (
+          <img 
+            src={product.image} 
+            alt={product.name} 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="text-gray-400">No Image</div>
+        )}
+      </div>
+      
+      <div className="p-5">
+        <h3 className="font-semibold text-lg mb-1 truncate">{product.name}</h3>
+        <p className="text-coral font-medium mb-2">${product.price}</p>
+        <p className="text-coolGray text-sm mb-4 line-clamp-2">{product.description}</p>
+        
+        <div className="flex justify-between items-center">
+          {status === "completed" ? (
+            <div className="flex items-center text-lushGreen">
+              <CheckCircle size={18} className="mr-2" />
+              <span>Migrated</span>
+            </div>
+          ) : status === "migrating" ? (
+            <div className="flex items-center text-mint">
+              <Clock size={18} className="mr-2 animate-pulse" />
+              <span>Migrating...</span>
+            </div>
+          ) : (
+            <Button 
+              onClick={onMigrate}
+              size="sm"
+              className="bg-cta-gradient hover:opacity-90 text-white"
+            >
+              Migrate
+              <ArrowRight size={16} className="ml-1" />
+            </Button>
+          )}
+          
+          <a 
+            href={product.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-sm text-coolGray hover:text-coral"
+          >
+            View on Gumroad
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductCard;

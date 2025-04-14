@@ -2,18 +2,22 @@
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const HeroSection = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleStartTransfer = () => {
-    // This would connect to Gumroad API in a real implementation
     setLoading(true);
-    // Simulate API call
+    toast.loading("Preparing transfer tools...");
+    
+    // Navigate to dashboard after brief delay
     setTimeout(() => {
       setLoading(false);
-      // In a real implementation, we would handle the response here
-      console.log("Connected to Gumroad API");
+      toast.success("Transfer tools ready!");
+      navigate("/dashboard");
     }, 1000);
   };
 
