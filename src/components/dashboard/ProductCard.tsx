@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { GumroadProduct } from "@/services/GumroadService";
+import { GumroadProduct } from "@/types/gumroad.types";
 
 interface ProductCardProps {
   product: GumroadProduct;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { GumroadProduct } from "@/types/gumroad.types";
