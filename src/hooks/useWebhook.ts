@@ -6,6 +6,7 @@ export const useWebhook = () => {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [isWebhookTested, setIsWebhookTested] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [webhookResponseData, setWebhookResponseData] = useState<any>(null);
 
   const testWebhook = async () => {
     if (!webhookUrl) {
@@ -14,29 +15,50 @@ export const useWebhook = () => {
     }
 
     setIsTestingWebhook(true);
+    setIsWebhookTested(false);
     toast.loading("Testing webhook connection...");
 
     try {
+      // Send a test payload to the webhook
+      const testPayload = {
+        test: true,
+        message: "Test connection from Portify",
+        timestamp: new Date().toISOString()
+      };
+
+      console.log("Sending test payload to webhook:", testPayload);
+      
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          test: true,
-          message: "Test connection from Portify"
-        }),
+        body: JSON.stringify(testPayload),
       });
+
+      // Try to parse response as JSON
+      let responseData;
+      try {
+        responseData = await response.json();
+        setWebhookResponseData(responseData);
+      } catch (e) {
+        // If response is not JSON, just use status text
+        responseData = { status: response.statusText || "Success" };
+        setWebhookResponseData(responseData);
+      }
 
       if (response.ok) {
         setIsWebhookTested(true);
         toast.success("Webhook connection successful!");
+        console.log("Webhook test successful:", responseData);
       } else {
-        toast.error("Failed to connect to webhook. Please check the URL and try again.");
+        toast.error(`Failed to connect to webhook: ${response.statusText}`);
+        console.error("Webhook test failed:", response.statusText);
       }
     } catch (error) {
       console.error("Webhook test failed:", error);
       toast.error("Failed to connect to webhook. Please check the URL and try again.");
+      setWebhookResponseData(null);
     } finally {
       setIsTestingWebhook(false);
     }
@@ -47,6 +69,7 @@ export const useWebhook = () => {
     setWebhookUrl,
     isWebhookTested,
     isTestingWebhook,
+    webhookResponseData,
     testWebhook
   };
 };
