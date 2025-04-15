@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, AlertCircle, Info } from "lucide-react";
+import { ArrowRight, AlertCircle, Info, RefreshCw } from "lucide-react";
 import { GumroadProduct } from "@/types/gumroad.types";
 import ProductCard from "./ProductCard";
 
@@ -9,8 +9,10 @@ interface ProductsSectionProps {
   isLoading: boolean;
   migratingProducts: string[];
   completedProducts: string[];
+  failedProducts?: string[];
   onMigrate: (product: GumroadProduct) => void;
   onMigrateAll: () => void;
+  onResetStatus?: (productId: string) => void;
   webhookReady: boolean;
 }
 
@@ -19,12 +21,16 @@ const ProductsSection = ({
   isLoading,
   migratingProducts,
   completedProducts,
+  failedProducts = [],
   onMigrate,
   onMigrateAll,
+  onResetStatus,
   webhookReady
 }: ProductsSectionProps) => {
   const pendingProducts = products.filter(
-    product => !migratingProducts.includes(product.id) && !completedProducts.includes(product.id)
+    product => !migratingProducts.includes(product.id) && 
+               !completedProducts.includes(product.id) &&
+               !failedProducts.includes(product.id)
   );
   
   return (
@@ -61,20 +67,24 @@ const ProductsSection = ({
         <>
           {/* Migration status summary */}
           {products.length > 0 && (
-            <div className="flex mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex-1 text-center">
+            <div className="flex flex-wrap mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex-1 text-center min-w-[100px] mb-2 sm:mb-0">
                 <div className="text-2xl font-bold">{products.length}</div>
                 <div className="text-sm text-coolGray">Total Products</div>
               </div>
-              <div className="flex-1 text-center">
-                <div className="text-2xl font-bold text-mint">{migratingProducts.length}</div>
+              <div className="flex-1 text-center min-w-[100px] mb-2 sm:mb-0">
+                <div className="text-2xl font-bold text-amber-500">{migratingProducts.length}</div>
                 <div className="text-sm text-coolGray">Migrating</div>
               </div>
-              <div className="flex-1 text-center">
+              <div className="flex-1 text-center min-w-[100px] mb-2 sm:mb-0">
                 <div className="text-2xl font-bold text-lushGreen">{completedProducts.length}</div>
                 <div className="text-sm text-coolGray">Completed</div>
               </div>
-              <div className="flex-1 text-center">
+              <div className="flex-1 text-center min-w-[100px] mb-2 sm:mb-0">
+                <div className="text-2xl font-bold text-red-500">{failedProducts.length}</div>
+                <div className="text-sm text-coolGray">Failed</div>
+              </div>
+              <div className="flex-1 text-center min-w-[100px]">
                 <div className="text-2xl font-bold text-coral">{pendingProducts.length}</div>
                 <div className="text-sm text-coolGray">Pending</div>
               </div>
@@ -91,6 +101,38 @@ const ProductsSection = ({
             </div>
           )}
           
+          {failedProducts.length > 0 && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center mb-2">
+                <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
+                <h3 className="font-medium text-red-800">Migration Errors</h3>
+              </div>
+              <p className="text-sm text-red-700 mb-3">
+                Some products failed to migrate. This could be due to connection issues with n8n. 
+                Make sure your n8n instance is running and the webhook is active.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {products
+                  .filter(product => failedProducts.includes(product.id))
+                  .map(product => (
+                    <div key={product.id} className="bg-white px-3 py-1 rounded border border-red-200 text-sm flex items-center">
+                      {product.name}
+                      {onResetStatus && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="ml-2 h-6 w-6 p-0" 
+                          onClick={() => onResetStatus(product.id)}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <ProductCard
@@ -101,9 +143,12 @@ const ProductsSection = ({
                     ? "completed"
                     : migratingProducts.includes(product.id)
                     ? "migrating"
+                    : failedProducts.includes(product.id)
+                    ? "failed"
                     : "pending"
                 }
                 onMigrate={() => onMigrate(product)}
+                onReset={onResetStatus ? () => onResetStatus(product.id) : undefined}
                 webhookReady={webhookReady}
               />
             ))}

@@ -7,11 +7,24 @@ import gumroadService from "@/services/GumroadService";
 export const useProductMigration = () => {
   const [migratingProducts, setMigratingProducts] = useState<string[]>([]);
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
+  const [failedProducts, setFailedProducts] = useState<string[]>([]);
   const [migrationResults, setMigrationResults] = useState<Record<string, any>>({});
 
   const startMigration = async (product: GumroadProduct, webhookUrl: string) => {
     if (!webhookUrl) {
       toast.error("Please enter an n8n webhook URL to start the migration");
+      return;
+    }
+
+    // Check if product is already being migrated
+    if (migratingProducts.includes(product.id)) {
+      toast.info(`Migration for ${product.name} is already in progress`);
+      return;
+    }
+
+    // Check if product is already migrated
+    if (completedProducts.includes(product.id)) {
+      toast.info(`${product.name} has already been migrated`);
       return;
     }
 
@@ -71,8 +84,18 @@ export const useProductMigration = () => {
 
     } catch (error) {
       console.error("Migration failed:", error);
-      toast.error("Migration failed. Please check your webhook URL and n8n workflow.");
+      
+      // Improved error messaging
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.error(
+          "Migration failed: Could not connect to n8n webhook. Please verify that your n8n instance is running and the webhook is active."
+        );
+      } else {
+        toast.error(`Migration failed for ${product.name}. Please check your webhook URL and n8n workflow.`);
+      }
+      
       setMigratingProducts(prev => prev.filter(id => id !== product.id));
+      setFailedProducts(prev => [...prev, product.id]);
     }
   };
 
@@ -102,11 +125,23 @@ export const useProductMigration = () => {
     }
   };
 
+  const resetMigrationStatus = (productId: string) => {
+    setCompletedProducts(prev => prev.filter(id => id !== productId));
+    setFailedProducts(prev => prev.filter(id => id !== productId));
+    
+    // Also remove from migration results
+    const newResults = { ...migrationResults };
+    delete newResults[productId];
+    setMigrationResults(newResults);
+  };
+
   return {
     migratingProducts,
     completedProducts,
+    failedProducts,
     migrationResults,
     startMigration,
-    startAllMigrations
+    startAllMigrations,
+    resetMigrationStatus
   };
 };

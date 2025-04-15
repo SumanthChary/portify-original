@@ -9,9 +9,9 @@ import { useProducts } from "@/hooks/useProducts";
 import { useProductMigration } from "@/hooks/useProductMigration";
 
 const MigrationDashboard = () => {
-  const { webhookUrl, setWebhookUrl, isWebhookTested, isTestingWebhook, testWebhook } = useWebhook();
+  const { webhookUrl, setWebhookUrl, isWebhookTested, isTestingWebhook, testWebhook, validateWebhookUrl } = useWebhook();
   const { products, isLoading } = useProducts();
-  const { migratingProducts, completedProducts, startMigration, startAllMigrations } = useProductMigration();
+  const { migratingProducts, completedProducts, failedProducts, startMigration, startAllMigrations, resetMigrationStatus } = useProductMigration();
 
   return (
     <div className="section-container py-8">
@@ -28,6 +28,7 @@ const MigrationDashboard = () => {
         isTestingWebhook={isTestingWebhook}
         isWebhookTested={isWebhookTested}
         onTestWebhook={testWebhook}
+        validateWebhookUrl={validateWebhookUrl}
       />
 
       <WorkflowVisualizer />
@@ -37,8 +38,10 @@ const MigrationDashboard = () => {
         isLoading={isLoading}
         migratingProducts={migratingProducts}
         completedProducts={completedProducts}
+        failedProducts={failedProducts}
         onMigrate={(product) => startMigration(product, webhookUrl)}
         onMigrateAll={() => startAllMigrations(products, webhookUrl)}
+        onResetStatus={resetMigrationStatus}
         webhookReady={!!webhookUrl && isWebhookTested}
       />
       
