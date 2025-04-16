@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { GumroadProduct } from "@/services/GumroadService";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   product: GumroadProduct;
@@ -11,6 +12,32 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardProps) => {
+  const handleMigration = async () => {
+    try {
+      const response = await fetch('https://your-workspace.n8n.cloud/webhook/gumroad-to-payhip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: product.name,
+          description: product.description,
+          price: product.price * 100, // Convert to cents
+          image: product.image || ''
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Migration failed');
+      }
+
+      onMigrate();
+    } catch (error) {
+      console.error('Migration error:', error);
+      toast.error('Failed to migrate product. Please try again.');
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -43,7 +70,7 @@ const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardPr
             </div>
           ) : (
             <Button 
-              onClick={onMigrate}
+              onClick={handleMigration}
               size="sm"
               className="bg-cta-gradient hover:opacity-90 text-white"
               disabled={!webhookReady}
