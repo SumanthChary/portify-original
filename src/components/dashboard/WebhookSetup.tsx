@@ -146,7 +146,7 @@ const WebhookSetup = ({
                   <code className="bg-slate-100 px-1 rounded text-xs">URL: https://api.gumroad.com/v2/products</code>, 
                   <br />
                   <code className="bg-slate-100 px-1 rounded text-xs">Authentication: Bearer Token</code>, 
-                  <code className="bg-slate-100 px-1 rounded text-xs">Token: {{$json["gumroadToken"]}}</code>
+                  <code className="bg-slate-100 px-1 rounded text-xs">Token: {'{{$json["gumroadToken"]}}'}</code>
                 </div>
               </li>
               <li>
