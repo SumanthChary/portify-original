@@ -14,7 +14,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardProps) => {
   const handleMigration = async () => {
     try {
-      const response = await fetch('https://your-workspace.n8n.cloud/webhook/gumroad-to-payhip', {
+      const response = await fetch('https://portify.app.n8n.cloud/webhook/migrate-gumroad', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
