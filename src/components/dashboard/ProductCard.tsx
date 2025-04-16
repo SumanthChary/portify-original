@@ -1,25 +1,16 @@
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
-import { GumroadProduct } from "@/types/gumroad.types";
+import { ArrowRight, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { GumroadProduct } from "@/services/GumroadService";
 
 interface ProductCardProps {
   product: GumroadProduct;
-  status: "pending" | "migrating" | "completed" | "failed";
+  status: "pending" | "migrating" | "completed";
   onMigrate: () => void;
-  onReset?: () => void;
   webhookReady: boolean;
-  retryCount?: number;
 }
 
-const ProductCard = ({ 
-  product, 
-  status, 
-  onMigrate, 
-  onReset, 
-  webhookReady,
-  retryCount = 0
-}: ProductCardProps) => {
+const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardProps) => {
   return (
     <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -49,16 +40,6 @@ const ProductCard = ({
             <div className="flex items-center text-mint">
               <Clock size={18} className="mr-2 animate-pulse" />
               <span>Migrating...</span>
-            </div>
-          ) : status === "failed" ? (
-            <div className="flex items-center text-red-500">
-              <AlertCircle size={18} className="mr-2" />
-              <span>Migration Failed</span>
-              {retryCount > 0 && (
-                <span className="text-xs ml-2 bg-red-50 px-1 py-0.5 rounded">
-                  Attempts: {retryCount}
-                </span>
-              )}
             </div>
           ) : (
             <Button 
@@ -91,20 +72,6 @@ const ProductCard = ({
             View on Gumroad
           </a>
         </div>
-
-        {status === "failed" && onReset && (
-          <div className="mt-2 text-center">
-            <Button 
-              onClick={onReset}
-              variant="outline"
-              size="sm"
-              className="text-red-500 hover:text-red-600"
-            >
-              <RefreshCw className="h-3 w-3 mr-1" /> 
-              Retry Migration
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

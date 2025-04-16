@@ -1,25 +1,149 @@
 
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckCircle, Clock, RefreshCw, Info } from "lucide-react";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import gumroadService, { GumroadProduct } from "@/services/GumroadService";
+import ProductCard from "./ProductCard";
 import WorkflowVisualizer from "./WorkflowVisualizer";
-import WebhookSetup from "./WebhookSetup";
-import ProductsSection from "./ProductsSection";
-import { useWebhook } from "@/hooks/useWebhook";
-import { useProducts } from "@/hooks/useProducts";
-import { useProductMigration } from "@/hooks/useProductMigration";
 
 const MigrationDashboard = () => {
-  const { webhookUrl, setWebhookUrl, isWebhookTested, isTestingWebhook, testWebhook, validateWebhookUrl } = useWebhook();
-  const { products, isLoading } = useProducts();
-  const { 
-    migratingProducts, 
-    completedProducts, 
-    failedProducts, 
-    startMigration, 
-    startAllMigrations, 
-    resetMigrationStatus,
-    retryCount
-  } = useProductMigration();
+  const [products, setProducts] = useState<GumroadProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [migratingProducts, setMigratingProducts] = useState<string[]>([]);
+  const [completedProducts, setCompletedProducts] = useState<string[]>([]);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [isWebhookTested, setIsWebhookTested] = useState(false);
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+
+  useEffect(() => {
+    fetchGumroadProducts();
+  }, []);
+
+  const fetchGumroadProducts = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedProducts = await gumroadService.getProducts();
+      setProducts(fetchedProducts);
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      toast.error("Failed to fetch your Gumroad products. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const testWebhook = async () => {
+    if (!webhookUrl) {
+      toast.error("Please enter an n8n webhook URL");
+      return;
+    }
+
+    setIsTestingWebhook(true);
+    toast.loading("Testing webhook connection...");
+
+    try {
+      // Send a test request to the webhook
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          test: true,
+          message: "Test connection from Portify"
+        }),
+      });
+
+      if (response.ok) {
+        setIsWebhookTested(true);
+        toast.success("Webhook connection successful!");
+      } else {
+        toast.error("Failed to connect to webhook. Please check the URL and try again.");
+      }
+    } catch (error) {
+      console.error("Webhook test failed:", error);
+      toast.error("Failed to connect to webhook. Please check the URL and try again.");
+    } finally {
+      setIsTestingWebhook(false);
+    }
+  };
+
+  const startMigration = async (productId: string) => {
+    if (!webhookUrl) {
+      toast.error("Please enter an n8n webhook URL to start the migration");
+      return;
+    }
+
+    if (!isWebhookTested) {
+      toast.warning("Please test the webhook connection first");
+      return;
+    }
+
+    setMigratingProducts(prev => [...prev, productId]);
+    toast.loading(`Starting migration for product ${productId}...`);
+
+    try {
+      // Here we would trigger the n8n webhook
+      const product = products.find(p => p.id === productId);
+      if (!product) throw new Error("Product not found");
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gumroadToken: gumroadService.getAccessToken(),
+          product: {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            description: product.description,
+            url: product.url,
+            image: product.image
+          },
+          user_id: "user_" + Date.now(),
+          email: "user@example.com"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Simulate migration process
+      setTimeout(() => {
+        setMigratingProducts(prev => prev.filter(id => id !== productId));
+        setCompletedProducts(prev => [...prev, productId]);
+        toast.success(`Successfully migrated product: ${product.name}`);
+      }, 3000);
+
+    } catch (error) {
+      console.error("Migration failed:", error);
+      toast.error("Migration failed. Please check your webhook URL and try again.");
+      setMigratingProducts(prev => prev.filter(id => id !== productId));
+    }
+  };
+
+  const startAllMigrations = () => {
+    if (!webhookUrl) {
+      toast.error("Please enter an n8n webhook URL to start the migration");
+      return;
+    }
+
+    if (!isWebhookTested) {
+      toast.warning("Please test the webhook connection first");
+      return;
+    }
+
+    products.forEach(product => {
+      if (!migratingProducts.includes(product.id) && !completedProducts.includes(product.id)) {
+        startMigration(product.id);
+      }
+    });
+  };
 
   return (
     <div className="section-container py-8">
@@ -30,29 +154,95 @@ const MigrationDashboard = () => {
         </p>
       </div>
 
-      <WebhookSetup
-        webhookUrl={webhookUrl}
-        onWebhookUrlChange={setWebhookUrl}
-        isTestingWebhook={isTestingWebhook}
-        isWebhookTested={isWebhookTested}
-        onTestWebhook={testWebhook}
-        validateWebhookUrl={validateWebhookUrl}
-      />
+      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 className="text-xl font-semibold mb-4">n8n Webhook Setup</h2>
+        <p className="mb-4 text-coolGray">
+          Enter your n8n webhook URL to connect the workflow:
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <input
+            type="text"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://your-n8n-instance.com/webhook/gumroad-migration"
+            className="flex-grow px-4 py-2 border border-gray-300 rounded-md"
+          />
+          <Button 
+            variant="outline" 
+            onClick={testWebhook}
+            disabled={isTestingWebhook || !webhookUrl}
+            className="inline-flex items-center"
+          >
+            {isTestingWebhook ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Testing...
+              </>
+            ) : isWebhookTested ? (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                Verified
+              </>
+            ) : (
+              <>
+                <Info className="mr-2 h-4 w-4" />
+                Test Connection
+              </>
+            )}
+          </Button>
+        </div>
+        
+        <div className="mt-4 text-sm text-coolGray">
+          <p className="flex items-center">
+            <Info className="h-4 w-4 mr-1 text-mint" />
+            Don't have an n8n instance? <a href="https://n8n.io" target="_blank" rel="noopener noreferrer" className="text-coral ml-1 hover:underline">Sign up for free at n8n.io</a>
+          </p>
+        </div>
+      </div>
 
       <WorkflowVisualizer />
 
-      <ProductsSection
-        products={products}
-        isLoading={isLoading}
-        migratingProducts={migratingProducts}
-        completedProducts={completedProducts}
-        failedProducts={failedProducts}
-        onMigrate={(product) => startMigration(product, webhookUrl)}
-        onMigrateAll={() => startAllMigrations(products, webhookUrl)}
-        onResetStatus={resetMigrationStatus}
-        webhookReady={!!webhookUrl && isWebhookTested}
-        retryCount={retryCount}
-      />
+      <div className="mt-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+          <h2 className="text-xl font-semibold">Your Gumroad Products</h2>
+          <Button 
+            onClick={startAllMigrations}
+            disabled={products.length === 0 || !webhookUrl || !isWebhookTested}
+            className="mt-2 sm:mt-0 bg-cta-gradient hover:opacity-90"
+          >
+            Migrate All Products
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center p-8">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-coral border-r-transparent"></div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-lg text-coolGray">No products found in your Gumroad account.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                status={
+                  completedProducts.includes(product.id)
+                    ? "completed"
+                    : migratingProducts.includes(product.id)
+                    ? "migrating"
+                    : "pending"
+                }
+                onMigrate={() => startMigration(product.id)}
+                webhookReady={!!webhookUrl && isWebhookTested}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       
       <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-100">
         <h2 className="text-xl font-semibold mb-4">Need Help Setting Up n8n?</h2>

@@ -3,21 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* San Francisco Font */
-@font-face {
-  font-family: "SF Pro Display";
-  src: local("SF Pro Display"), local("SFProDisplay");
-  font-weight: 400;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF Pro Text";
-  src: local("SF Pro Text"), local("SFProText");
-  font-weight: 400;
-  font-style: normal;
-}
-
 @layer base {
   :root {
     --background: 0 0% 98%;
