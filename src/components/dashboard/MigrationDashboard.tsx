@@ -11,7 +11,15 @@ import { useProductMigration } from "@/hooks/useProductMigration";
 const MigrationDashboard = () => {
   const { webhookUrl, setWebhookUrl, isWebhookTested, isTestingWebhook, testWebhook, validateWebhookUrl } = useWebhook();
   const { products, isLoading } = useProducts();
-  const { migratingProducts, completedProducts, failedProducts, startMigration, startAllMigrations, resetMigrationStatus } = useProductMigration();
+  const { 
+    migratingProducts, 
+    completedProducts, 
+    failedProducts, 
+    startMigration, 
+    startAllMigrations, 
+    resetMigrationStatus,
+    retryCount
+  } = useProductMigration();
 
   return (
     <div className="section-container py-8">
@@ -43,6 +51,7 @@ const MigrationDashboard = () => {
         onMigrateAll={() => startAllMigrations(products, webhookUrl)}
         onResetStatus={resetMigrationStatus}
         webhookReady={!!webhookUrl && isWebhookTested}
+        retryCount={retryCount}
       />
       
       <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-100">

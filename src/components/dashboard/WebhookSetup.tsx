@@ -49,6 +49,18 @@ const WebhookSetup = ({
     toast.success("Webhook format copied to clipboard!");
   };
 
+  const copyPayloadExample = () => {
+    const payloadExample = JSON.stringify({
+      title: "My Product",
+      description: "A cool digital product",
+      price: 19.99,
+      image_url: "https://example.com/image.jpg"
+    }, null, 2);
+    
+    navigator.clipboard.writeText(payloadExample);
+    toast.success("Example payload copied to clipboard!");
+  };
+
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     onWebhookUrlChange(url);
@@ -117,39 +129,57 @@ const WebhookSetup = ({
         
         {showGuide && (
           <div className="mt-4 p-4 bg-gray-50 rounded-md text-sm">
-            <h3 className="font-semibold mb-2">Setting up your n8n webhook:</h3>
+            <h3 className="font-semibold mb-2">Complete n8n Workflow Setup Guide:</h3>
             <ol className="list-decimal ml-5 space-y-3">
               <li>
-                Create a free account at <a href="https://n8n.io" target="_blank" rel="noopener noreferrer" className="text-coral hover:underline inline-flex items-center">
-                  n8n.io <ExternalLink className="ml-1 h-3 w-3" />
-                </a> or use self-hosted n8n
-              </li>
-              <li>
-                Create a new workflow and add a <strong>Webhook node</strong> as the trigger
+                <strong>Start with a Webhook Trigger</strong>
                 <div className="mt-1 bg-blue-50 p-2 rounded border border-blue-100">
-                  In n8n, start with a Webhook node, not an HTTP Request node
+                  Configure as: <code className="bg-slate-100 px-1 rounded text-xs">Method: POST</code>, 
+                  <code className="bg-slate-100 px-1 rounded text-xs">Path: migrate-gumroad</code>, 
+                  <code className="bg-slate-100 px-1 rounded text-xs">Response Mode: On Received</code>
                 </div>
               </li>
               <li>
-                Configure the webhook with:
-                <ul className="list-disc ml-6 mt-1 space-y-1 text-coolGray">
-                  <li><strong>HTTP Method</strong>: POST</li>
-                  <li><strong>Path</strong>: migrate-gumroad (or any name you prefer)</li>
-                  <li><strong>Response Mode</strong>: On Received</li>
-                </ul>
-              </li>
-              <li>
-                Click <strong>"Execute Node"</strong> to start listening
-                <div className="mt-1 bg-yellow-50 p-2 rounded border border-yellow-100">
-                  <strong>Important:</strong> Your webhook must be active before testing. Click "Execute Node" in n8n first!
+                <strong>Add HTTP Request Node for Gumroad API</strong> 
+                <div className="mt-1 bg-blue-50 p-2 rounded border border-blue-100">
+                  <code className="bg-slate-100 px-1 rounded text-xs">Method: GET</code>, 
+                  <code className="bg-slate-100 px-1 rounded text-xs">URL: https://api.gumroad.com/v2/products</code>, 
+                  <br />
+                  <code className="bg-slate-100 px-1 rounded text-xs">Authentication: Bearer Token</code>, 
+                  <code className="bg-slate-100 px-1 rounded text-xs">Token: {{$json["gumroadToken"]}}</code>
                 </div>
               </li>
               <li>
-                Copy the generated webhook URL (it should look like <code className="bg-slate-100 px-1 rounded text-xs">https://your-instance.hooks.n8n.cloud/webhook/migrate-gumroad</code>) and paste it above
+                <strong>Add Function Node to Process Products</strong>
+                <div className="mt-1 bg-blue-50 p-2 rounded border border-blue-100">
+                  This transforms the Gumroad response to a format Payhip can use
+                </div>
+              </li>
+              <li>
+                <strong>Add HTTP Request Node for Payhip</strong>
+                <div className="mt-1 bg-blue-50 p-2 rounded border border-blue-100">
+                  <code className="bg-slate-100 px-1 rounded text-xs">Method: POST</code>, 
+                  <code className="bg-slate-100 px-1 rounded text-xs">URL: https://api.payhip.com/v1/products</code>, 
+                  <br/>
+                  <code className="bg-slate-100 px-1 rounded text-xs">Send body with product details</code>
+                </div>
+              </li>
+              <li>
+                <strong>Add Email Notification (Optional)</strong>
+                <div className="mt-1 bg-blue-50 p-2 rounded border border-blue-100">
+                  Send confirmation email to the user when migration is successful
+                </div>
+              </li>
+              <li>
+                <strong>Set Response to Webhook</strong>
+                <div className="mt-1 bg-blue-50 p-2 rounded border border-blue-100">
+                  <code className="bg-slate-100 px-1 rounded text-xs">Status: 200</code>, 
+                  <code className="bg-slate-100 px-1 rounded text-xs">Body: JSON response with status</code>
+                </div>
               </li>
             </ol>
             
-            <h3 className="font-semibold mt-4 mb-2">Expected webhook payload format:</h3>
+            <h3 className="font-semibold mt-4 mb-2">Webhook payload format:</h3>
             <div className="relative bg-slate-800 text-white p-3 rounded overflow-x-auto">
               <Button 
                 size="sm" 
@@ -176,14 +206,34 @@ const WebhookSetup = ({
               </pre>
             </div>
 
+            <h3 className="font-semibold mt-4 mb-2">Example Payhip payload format:</h3>
+            <div className="relative bg-slate-800 text-white p-3 rounded overflow-x-auto">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="absolute right-2 top-2 text-white hover:text-white/80"
+                onClick={copyPayloadExample}
+              >
+                <Copy size={14} />
+              </Button>
+              <pre className="text-xs">
+{`{
+  "title": "My Product",
+  "description": "A cool digital product",
+  "price": 19.99,
+  "image_url": "https://example.com/image.jpg"
+}`}
+              </pre>
+            </div>
+
             <div className="mt-4 p-3 bg-green-50 rounded border border-green-100">
               <h4 className="font-medium text-green-800">Troubleshooting Connection Issues</h4>
               <ul className="list-disc ml-5 mt-1 space-y-1 text-green-700 text-xs">
                 <li>Make sure your n8n instance is running and accessible from the internet</li>
                 <li>Verify you've clicked "Execute Node" on the Webhook node in n8n</li>
-                <li>Check that you're using the correct webhook URL (copy directly from n8n)</li>
-                <li>If using a custom domain, ensure CORS is properly configured</li>
-                <li>Try a different browser if you're experiencing connection issues</li>
+                <li>For testing, try sending a simple payload using curl or Postman</li>
+                <li>Check the function node in n8n to ensure it correctly processes product data</li>
+                <li>If using Cloudinary, verify your upload preset is properly configured</li>
               </ul>
             </div>
           </div>

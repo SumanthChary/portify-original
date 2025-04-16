@@ -14,6 +14,7 @@ interface ProductsSectionProps {
   onMigrateAll: () => void;
   onResetStatus?: (productId: string) => void;
   webhookReady: boolean;
+  retryCount?: Record<string, number>;
 }
 
 const ProductsSection = ({
@@ -25,7 +26,8 @@ const ProductsSection = ({
   onMigrate,
   onMigrateAll,
   onResetStatus,
-  webhookReady
+  webhookReady,
+  retryCount = {}
 }: ProductsSectionProps) => {
   const pendingProducts = products.filter(
     product => !migratingProducts.includes(product.id) && 
@@ -150,6 +152,7 @@ const ProductsSection = ({
                 onMigrate={() => onMigrate(product)}
                 onReset={onResetStatus ? () => onResetStatus(product.id) : undefined}
                 webhookReady={webhookReady}
+                retryCount={retryCount[product.id] || 0}
               />
             ))}
           </div>

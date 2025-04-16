@@ -9,6 +9,16 @@ export const useProductMigration = () => {
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
   const [failedProducts, setFailedProducts] = useState<string[]>([]);
   const [migrationResults, setMigrationResults] = useState<Record<string, any>>({});
+  const [migrationLogs, setMigrationLogs] = useState<Record<string, string[]>>({});
+  const [retryCount, setRetryCount] = useState<Record<string, number>>({});
+
+  // Add a log entry for a product
+  const addLog = (productId: string, message: string) => {
+    setMigrationLogs(prev => ({
+      ...prev,
+      [productId]: [...(prev[productId] || []), `${new Date().toISOString()} - ${message}`]
+    }));
+  };
 
   const startMigration = async (product: GumroadProduct, webhookUrl: string) => {
     if (!webhookUrl) {
@@ -29,10 +39,17 @@ export const useProductMigration = () => {
     }
 
     setMigratingProducts(prev => [...prev, product.id]);
+    addLog(product.id, `Starting migration for product: ${product.name}`);
     toast.loading(`Starting migration for ${product.name}...`);
 
+    // Increment retry count if it exists, otherwise set to 1
+    setRetryCount(prev => ({
+      ...prev,
+      [product.id]: (prev[product.id] || 0) + 1
+    }));
+
     try {
-      // Prepare payload for n8n webhook
+      // Prepare payload for n8n webhook - following the format described in the prompt
       const payload = {
         gumroadToken: gumroadService.getAccessToken(),
         product: {
@@ -48,6 +65,7 @@ export const useProductMigration = () => {
       };
 
       console.log("Sending payload to n8n:", payload);
+      addLog(product.id, `Sending data to webhook: ${webhookUrl}`);
 
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -60,9 +78,11 @@ export const useProductMigration = () => {
       let responseData;
       try {
         responseData = await response.json();
+        addLog(product.id, `Received response: ${JSON.stringify(responseData)}`);
       } catch (e) {
         // Some webhooks might not return JSON
         responseData = { success: response.ok };
+        addLog(product.id, `Non-JSON response received, status: ${response.ok ? 'Success' : 'Failed'}`);
       }
 
       if (!response.ok) {
@@ -80,19 +100,23 @@ export const useProductMigration = () => {
       // Update product status
       setMigratingProducts(prev => prev.filter(id => id !== product.id));
       setCompletedProducts(prev => [...prev, product.id]);
+      addLog(product.id, `Migration successful`);
       toast.success(`Successfully migrated: ${product.name}`);
 
     } catch (error) {
       console.error("Migration failed:", error);
       
       // Improved error messaging
+      let errorMessage = `Migration failed for ${product.name}. Please check your webhook URL and n8n workflow.`;
+      
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.error(
-          "Migration failed: Could not connect to n8n webhook. Please verify that your n8n instance is running and the webhook is active."
-        );
-      } else {
-        toast.error(`Migration failed for ${product.name}. Please check your webhook URL and n8n workflow.`);
+        errorMessage = "Migration failed: Could not connect to n8n webhook. Please verify that your n8n instance is running and the webhook is active.";
+      } else if (error instanceof Error) {
+        errorMessage = `Migration error: ${error.message}`;
       }
+      
+      addLog(product.id, `Error: ${errorMessage}`);
+      toast.error(errorMessage);
       
       setMigratingProducts(prev => prev.filter(id => id !== product.id));
       setFailedProducts(prev => [...prev, product.id]);
@@ -133,6 +157,9 @@ export const useProductMigration = () => {
     const newResults = { ...migrationResults };
     delete newResults[productId];
     setMigrationResults(newResults);
+    
+    // Add a log entry
+    addLog(productId, `Migration status reset - ready to try again`);
   };
 
   return {
@@ -140,6 +167,8 @@ export const useProductMigration = () => {
     completedProducts,
     failedProducts,
     migrationResults,
+    migrationLogs,
+    retryCount,
     startMigration,
     startAllMigrations,
     resetMigrationStatus

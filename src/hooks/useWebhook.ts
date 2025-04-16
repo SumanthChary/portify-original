@@ -7,6 +7,7 @@ export const useWebhook = () => {
   const [isWebhookTested, setIsWebhookTested] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [webhookResponseData, setWebhookResponseData] = useState<any>(null);
+  const [connectionErrors, setConnectionErrors] = useState<string[]>([]);
 
   const validateWebhookUrl = (url: string): boolean => {
     try {
@@ -14,7 +15,10 @@ export const useWebhook = () => {
       return url.includes("http") && (
         url.includes(".hooks.n8n.cloud/webhook/") || 
         url.includes("/webhook/") || 
-        url.includes("/hook/")
+        url.includes("/hook/") ||
+        // Common self-hosted n8n paths
+        url.includes(":5678/webhook/") || 
+        url.includes("/n8n/webhook/")
       );
     } catch (e) {
       return false;
@@ -34,6 +38,7 @@ export const useWebhook = () => {
 
     setIsTestingWebhook(true);
     setIsWebhookTested(false);
+    setConnectionErrors([]);
     toast.loading("Testing webhook connection...");
 
     try {
@@ -42,7 +47,13 @@ export const useWebhook = () => {
         test: true,
         message: "Test connection from Portify",
         timestamp: new Date().toISOString(),
-        action: "test_connection"
+        action: "test_connection",
+        // Add example product data to simulate actual migration
+        sample_product: {
+          name: "Test Product",
+          price: 19.99,
+          description: "This is a test product for webhook verification"
+        }
       };
 
       console.log("Sending test payload to webhook:", testPayload);
@@ -71,18 +82,25 @@ export const useWebhook = () => {
         toast.success("Webhook connection successful!");
         console.log("Webhook test successful:", responseData);
       } else {
-        toast.error(`Failed to connect to webhook: ${response.statusText}`);
+        const errorMsg = `Failed to connect to webhook: ${response.statusText}`;
+        setConnectionErrors(prev => [...prev, errorMsg]);
+        toast.error(errorMsg);
         console.error("Webhook test failed:", response.statusText);
       }
     } catch (error) {
       console.error("Webhook test failed:", error);
       
+      let errorMsg = "Failed to connect to webhook. Please check the URL and try again.";
+      
       // More detailed error message
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.error("Network error connecting to webhook. Make sure your n8n instance is running and accessible.");
-      } else {
-        toast.error("Failed to connect to webhook. Please check the URL and try again.");
+        errorMsg = "Network error connecting to webhook. Make sure your n8n instance is running and accessible.";
+      } else if (error instanceof TypeError && error.message.includes('NetworkError')) {
+        errorMsg = "CORS error: Your n8n instance may be blocking requests. Check CORS settings or use a proxy.";
       }
+      
+      setConnectionErrors(prev => [...prev, errorMsg]);
+      toast.error(errorMsg);
       setWebhookResponseData(null);
     } finally {
       setIsTestingWebhook(false);
@@ -95,6 +113,7 @@ export const useWebhook = () => {
     isWebhookTested,
     isTestingWebhook,
     webhookResponseData,
+    connectionErrors,
     testWebhook,
     validateWebhookUrl
   };
