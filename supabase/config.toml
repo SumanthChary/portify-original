@@ -1,1 +1,5 @@
+
 project_id = "yvvqfcwhskthbbjspcvi"
+
+[functions.gumroad-migration]
+verify_jwt = false

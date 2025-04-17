@@ -9,7 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      migrations: {
+        Row: {
+          created_at: string
+          gumroad_product_id: string
+          id: string
+          image_url: string | null
+          product_title: string
+          status: string | null
+          user_email: string
+        }
+        Insert: {
+          created_at?: string
+          gumroad_product_id: string
+          id?: string
+          image_url?: string | null
+          product_title: string
+          status?: string | null
+          user_email: string
+        }
+        Update: {
+          created_at?: string
+          gumroad_product_id?: string
+          id?: string
+          image_url?: string | null
+          product_title?: string
+          status?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
