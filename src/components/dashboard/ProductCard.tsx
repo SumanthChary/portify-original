@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowRight, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { GumroadProduct } from "@/services/GumroadService";
 import { toast } from "sonner";
@@ -39,7 +40,7 @@ const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardPr
   };
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
         {product.image ? (
           <img 
@@ -52,12 +53,14 @@ const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardPr
         )}
       </div>
       
-      <div className="p-5">
+      <CardContent className="p-5">
         <h3 className="font-semibold text-lg mb-1 truncate">{product.name}</h3>
         <p className="text-coral font-medium mb-2">${product.price}</p>
         <p className="text-coolGray text-sm mb-4 line-clamp-2">{product.description}</p>
-        
-        <div className="flex justify-between items-center">
+      </CardContent>
+      
+      <CardFooter className="px-5 pb-5 pt-0">
+        <div className="flex justify-between items-center w-full">
           {status === "completed" ? (
             <div className="flex items-center text-lushGreen">
               <CheckCircle size={18} className="mr-2" />
@@ -99,8 +102,8 @@ const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardPr
             View on Gumroad
           </a>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 

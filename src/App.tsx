@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import N8nGuide from "./pages/N8nGuide";
+import ProductPreview from "./pages/ProductPreview";
+import WebhookReceiver from "./pages/WebhookReceiver";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +23,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/n8n-guide" element={<N8nGuide />} />
+          <Route path="/webhook" element={<WebhookReceiver />} />
+          <Route path="/preview/:previewId" element={<ProductPreview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
