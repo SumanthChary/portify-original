@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.product-migration-agent]
 verify_jwt = false
+
+[functions.product-preview-generator]
+verify_jwt = false
