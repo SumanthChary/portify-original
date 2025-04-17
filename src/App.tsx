@@ -11,6 +11,7 @@ import N8nGuide from "./pages/N8nGuide";
 import ProductPreview from "./pages/ProductPreview";
 import WebhookReceiver from "./pages/WebhookReceiver";
 import GumroadWebhookTest from "./pages/GumroadWebhookTest";
+import AutomationAgent from "./pages/AutomationAgent";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/webhook" element={<WebhookReceiver />} />
           <Route path="/preview/:previewId" element={<ProductPreview />} />
           <Route path="/gumroad-webhook-test" element={<GumroadWebhookTest />} />
+          <Route path="/automation-agent" element={<AutomationAgent />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

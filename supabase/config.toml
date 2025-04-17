@@ -3,3 +3,6 @@ project_id = "yvvqfcwhskthbbjspcvi"
 
 [functions.gumroad-migration]
 verify_jwt = false
+
+[functions.product-migration-agent]
+verify_jwt = false
