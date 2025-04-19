@@ -6,10 +6,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
 const GumroadWebhookTest = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, isLoading } = useAuth();
+  const [isSending, setIsSending] = useState(false);
   const [formData, setFormData] = useState({
     email: ""
   });
@@ -21,26 +23,51 @@ const GumroadWebhookTest = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSending(true);
     
     try {
-      toast.loading("Sending webhook data...");
+      toast.loading("Sending migration request...");
       
-      // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke("gumroad-migration", {
-        body: formData
+      // First call our Supabase edge function for logging/validation
+      const { data: edgeFunctionData, error: edgeFunctionError } = await fetch(
+        "https://yvvqfcwhskthbbjspcvi.supabase.co/functions/v1/gumroad-migration", 
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData)
+        }
+      ).then(res => res.json());
+      
+      if (edgeFunctionError) throw new Error(edgeFunctionError.message);
+      
+      // Now call the n8n webhook directly
+      const n8nResponse = await fetch("https://portify.app.n8n.cloud/webhook/migrate-gumroad", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData)
       });
       
-      if (error) throw error;
+      if (!n8nResponse.ok) {
+        throw new Error(`N8n webhook error: ${n8nResponse.status}`);
+      }
       
       toast.success("Migration request sent successfully!");
     } catch (error) {
       console.error("Error sending webhook data:", error);
-      toast.error("Failed to send migration request");
+      toast.error("Failed to send migration request. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    return <Navigate to="/auth" />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -48,15 +75,15 @@ const GumroadWebhookTest = () => {
       <main className="flex-grow bg-offwhite py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Test Gumroad Migration</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Gumroad to Payhip Migration</h1>
             <p className="text-lg text-coolGray">
-              Use this form to test the Gumroad to Payhip migration webhook.
+              Use this form to migrate your Gumroad products to Payhip through our n8n webhook.
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Send Migration Request</CardTitle>
+              <CardTitle>Start Migration</CardTitle>
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
@@ -73,24 +100,37 @@ const GumroadWebhookTest = () => {
                     placeholder="user@example.com"
                     required
                   />
+                  <p className="text-sm text-gray-500 mt-2">
+                    We'll send migration updates to this email address
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button 
                   type="submit" 
                   className="w-full bg-cta-gradient hover:opacity-90 text-white"
-                  disabled={isLoading}
+                  disabled={isSending}
                 >
-                  {isLoading ? (
+                  {isSending ? (
                     <>
                       <span className="inline-block h-4 w-4 mr-2 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
-                      Sending...
+                      Processing...
                     </>
-                  ) : "Trigger Migration"}
+                  ) : "Start Migration"}
                 </Button>
               </CardFooter>
             </form>
           </Card>
+
+          <div className="mt-8 bg-white p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold mb-3">What happens next?</h2>
+            <ol className="list-decimal list-inside space-y-2 text-coolGray">
+              <li>Your request is sent to our n8n workflow</li>
+              <li>The workflow fetches your Gumroad products</li>
+              <li>Products are processed and uploaded to Payhip</li>
+              <li>You'll receive an email confirmation when complete</li>
+            </ol>
+          </div>
         </div>
       </main>
       <Footer />

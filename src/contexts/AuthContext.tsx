@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface AuthContextType {
@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -30,7 +31,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (event === 'SIGNED_IN') {
         toast.success('Signed in successfully!');
-        navigate('/dashboard');
+        
+        // Get the saved path from state, or default to dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
       } else if (event === 'SIGNED_OUT') {
         toast.info('Signed out');
         navigate('/');
@@ -47,7 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -58,22 +62,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
     } catch (error: any) {
-      toast.error(error.message || 'Error signing in');
+      const errorMessage = error.message || 'Error signing in';
+      console.error('Sign in error:', error);
+      toast.error(errorMessage);
       throw error;
     }
   };
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) throw error;
-      toast.success('Signup successful! Please check your email for verification.');
+      
+      if (data.user && !data.session) {
+        toast.success('Signup successful! Please check your email for verification.');
+      } else {
+        toast.success('Signup successful!');
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Error signing up');
+      const errorMessage = error.message || 'Error signing up';
+      console.error('Sign up error:', error);
+      toast.error(errorMessage);
       throw error;
     }
   };
