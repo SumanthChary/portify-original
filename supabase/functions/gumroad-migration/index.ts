@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,27 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with service role key
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!, 
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    const { email } = await req.json();
 
-    // Parse incoming webhook data
-    const data = await req.json();
-
-    // Validate required fields
-    const { 
-      user_email, 
-      product_title, 
-      image_url, 
-      gumroad_product_id 
-    } = data;
-
-    if (!user_email || !product_title || !gumroad_product_id) {
+    if (!email) {
       return new Response(JSON.stringify({ 
-        error: 'Missing required fields',
-        required: ['user_email', 'product_title', 'gumroad_product_id']
+        error: 'Missing email field'
       }), {
         status: 400,
         headers: { 
@@ -44,36 +27,13 @@ serve(async (req) => {
       });
     }
 
-    // Insert migration record
-    const { data: insertedData, error } = await supabase
-      .from('migrations')
-      .insert({
-        user_email,
-        product_title,
-        image_url: image_url || null,
-        gumroad_product_id,
-        status: 'pending'
-      })
-      .select();
+    // Log the migration request
+    console.log('Migration request received for:', email);
 
-    if (error) {
-      console.error('Supabase insert error:', error);
-      return new Response(JSON.stringify({ 
-        error: 'Failed to insert migration record',
-        details: error 
-      }), {
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
-      });
-    }
-
-    // Successful response
+    // Return success response
     return new Response(JSON.stringify({
-      message: 'Migration record created successfully',
-      data: insertedData[0]
+      message: 'Migration request received',
+      data: { email }
     }), {
       headers: { 
         ...corsHeaders, 
