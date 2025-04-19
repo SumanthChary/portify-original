@@ -5,15 +5,17 @@ import Footer from "@/components/Footer";
 import MigrationDashboard from "@/components/dashboard/MigrationDashboard";
 import { toast } from "sonner";
 import gumroadService from "@/services/GumroadService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user } = useAuth(); // Use our auth context
+  const [isGumroadConnected, setIsGumroadConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Check if user is authenticated with Gumroad
     const authenticated = gumroadService.isAuthenticated();
-    setIsAuthenticated(authenticated);
+    setIsGumroadConnected(authenticated);
     setIsLoading(false);
     
     // Check if this is a redirect from OAuth flow
@@ -25,7 +27,7 @@ const Dashboard = () => {
       toast.loading("Connecting to Gumroad...");
       
       gumroadService.handleAuthCallback(code).then((success) => {
-        setIsAuthenticated(success);
+        setIsGumroadConnected(success);
         setIsLoading(false);
         
         if (success) {
@@ -44,6 +46,15 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow bg-offwhite">
+        <div className="section-container py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Dashboard</h1>
+            <p className="text-lg text-coolGray">
+              Welcome, {user?.email}! Manage your product migrations here.
+            </p>
+          </div>
+        </div>
+        
         {isLoading ? (
           <div className="section-container flex items-center justify-center min-h-[500px]">
             <div className="text-center">
@@ -51,7 +62,7 @@ const Dashboard = () => {
               <p className="text-lg text-coolGray">Loading...</p>
             </div>
           </div>
-        ) : isAuthenticated ? (
+        ) : isGumroadConnected ? (
           <MigrationDashboard />
         ) : (
           <div className="section-container text-center py-16">
