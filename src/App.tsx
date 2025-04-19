@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import ProductPreview from "./pages/ProductPreview";
 import WebhookReceiver from "./pages/WebhookReceiver";
 import GumroadWebhookTest from "./pages/GumroadWebhookTest";
 import AutomationAgent from "./pages/AutomationAgent";
+import MigrationAgent from "./pages/MigrationAgent";
 
 const queryClient = new QueryClient();
 
@@ -29,7 +29,7 @@ const App = () => (
           <Route path="/preview/:previewId" element={<ProductPreview />} />
           <Route path="/gumroad-webhook-test" element={<GumroadWebhookTest />} />
           <Route path="/automation-agent" element={<AutomationAgent />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/migration-agent" element={<MigrationAgent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
