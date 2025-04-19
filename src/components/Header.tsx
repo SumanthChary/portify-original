@@ -2,9 +2,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -15,10 +18,10 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
-            <div className="text-2xl font-bold">
+            <Link to="/" className="text-2xl font-bold">
               <span className="text-coral">port</span>
               <span className="text-darktext">ify</span>
-            </div>
+            </Link>
           </div>
           
           <nav className="hidden md:flex items-center space-x-8">
@@ -31,12 +34,34 @@ const Header = () => {
             <a href="#pricing" className="font-medium text-gray-700 hover:text-coral transition-colors">
               Pricing
             </a>
-            <Button variant="outline" className="border-coral text-coral hover:text-white hover:bg-coral">
-              Login
-            </Button>
-            <Button className="bg-cta-gradient hover:opacity-90">
-              Start Free
-            </Button>
+            {user ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="outline" className="border-coral text-coral hover:text-white hover:bg-coral">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button 
+                  className="bg-cta-gradient hover:opacity-90"
+                  onClick={() => signOut()}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline" className="border-coral text-coral hover:text-white hover:bg-coral">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button className="bg-cta-gradient hover:opacity-90">
+                    Start Free
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
           
           <div className="md:hidden">
@@ -59,12 +84,34 @@ const Header = () => {
               Pricing
             </a>
             <div className="pt-2 flex flex-col space-y-3">
-              <Button variant="outline" className="w-full border-coral text-coral hover:text-white hover:bg-coral">
-                Login
-              </Button>
-              <Button className="w-full bg-cta-gradient hover:opacity-90">
-                Start Free
-              </Button>
+              {user ? (
+                <>
+                  <Link to="/dashboard">
+                    <Button variant="outline" className="w-full border-coral text-coral hover:text-white hover:bg-coral">
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button 
+                    className="w-full bg-cta-gradient hover:opacity-90"
+                    onClick={() => signOut()}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth">
+                    <Button variant="outline" className="w-full border-coral text-coral hover:text-white hover:bg-coral">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/auth">
+                    <Button className="w-full bg-cta-gradient hover:opacity-90">
+                      Start Free
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
