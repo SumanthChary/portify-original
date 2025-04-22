@@ -58,17 +58,22 @@ const ProductPreview = () => {
     
     try {
       // Replace with your actual API endpoint
-      const response = await fetch('https://yourdomain.com/api/transfer-to-payhip', {
+      const response = await fetch('https://portify.app.n8n.cloud/webhook/migrate-gumroad', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: product.product_title,
-          description: "Product description", // Not available in migrations table
-          price: "$10", // Not available in migrations table
-          image: product.image_url,
-          id: product.id
+          id: product.id,
+        name: product.product_title,
+        price: product.price,
+        description: product.description,
+        type: product.type,
+        permalink: product.slug,
+        created_at: product.created_at,
+        updated_at: new Date().toISOString(),
+        user_email: userEmail,
+        image_url: product.image_url
         }),
       });
 
