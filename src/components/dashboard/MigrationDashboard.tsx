@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Clock, RefreshCw, Info } from "lucide-react";
@@ -8,12 +7,14 @@ import gumroadService, { GumroadProduct } from "@/services/GumroadService";
 import ProductCard from "./ProductCard";
 import WorkflowVisualizer from "./WorkflowVisualizer";
 
+const N8N_WEBHOOK_URL = "https://portify.app.n8n.cloud/webhook/preview-product";
+
 const MigrationDashboard = () => {
   const [products, setProducts] = useState<GumroadProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [migratingProducts, setMigratingProducts] = useState<string[]>([]);
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookUrl] = useState(N8N_WEBHOOK_URL);
   const [isWebhookTested, setIsWebhookTested] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
@@ -35,24 +36,24 @@ const MigrationDashboard = () => {
   };
 
   const testWebhook = async () => {
-    if (!webhookUrl) {
-      toast.error("Please enter an n8n webhook URL");
-      return;
-    }
-
     setIsTestingWebhook(true);
     toast.loading("Testing webhook connection...");
 
     try {
-      // Send a test request to the webhook
-      const response = await fetch(webhookUrl, {
+      // Send a test request to the webhook with the expected payload
+      const response = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          test: true,
-          message: "Test connection from Portify"
+          title: "Test Product",
+          status: "Success",
+          image_url: "https://example.com/image.jpg",
+          description: "Test product description",
+          price: 100,
+          permalink: "test-product",
+          timestamp: new Date().toISOString()
         }),
       });
 
@@ -163,9 +164,8 @@ const MigrationDashboard = () => {
           <input
             type="text"
             value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://your-n8n-instance.com/webhook/gumroad-migration"
-            className="flex-grow px-4 py-2 border border-gray-300 rounded-md"
+            readOnly
+            className="flex-grow px-4 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
           />
           <Button 
             variant="outline" 
