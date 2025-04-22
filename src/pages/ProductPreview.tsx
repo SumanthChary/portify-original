@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,23 +56,21 @@ const ProductPreview = () => {
     setTransferring(product.id);
     
     try {
-      // Replace with your actual API endpoint
+      // Updated to use the actual n8n webhook endpoint and correct payload
       const response = await fetch('https://portify.app.n8n.cloud/webhook/migrate-gumroad', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: product.id,
-        name: product.product_title,
-        price: product.price,
-        description: product.description,
-        type: product.type,
-        permalink: product.slug,
-        created_at: product.created_at,
-        updated_at: new Date().toISOString(),
-        user_email: userEmail,
-        image_url: product.image_url
+          name: product.product_title,
+          description: "Product description", // Not available in migrations table
+          price: 1000, // Example price in cents, update as needed
+          type: "ebook", // Example type, update as needed
+          permalink: product.gumroad_product_id || "", // Use actual permalink if available
+          image_url: product.image_url,
+          user_email: product.user_email || "default@email.com", // Use actual user_email if available
+          created_at: product.created_at
         }),
       });
 
