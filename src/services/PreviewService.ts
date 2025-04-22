@@ -1,3 +1,5 @@
+import { sendJsonToWebhook } from '../lib/utils';
+
 // Service to handle product previews from webhooks
 
 // Generate a unique ID for the preview
@@ -33,3 +35,25 @@ export const cleanupOldPreviews = (): void => {
     });
   }
 };
+
+/**
+ * Handles product preview data and sends it to the webhook.
+ * @param productData - The product data to send.
+ * @param webhookUrl - The webhook URL to send the data to.
+ */
+export async function handleProductPreview(productData: {
+  title: string;
+  status: string;
+  image_url: string;
+  description: string;
+  price: number;
+  permalink: string;
+  timestamp: string;
+}, webhookUrl: string): Promise<void> {
+  try {
+    await sendJsonToWebhook(webhookUrl, productData);
+    console.log('Product preview sent successfully.');
+  } catch (error) {
+    console.error('Failed to send product preview:', error);
+  }
+}
