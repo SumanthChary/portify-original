@@ -24,3 +24,18 @@ export async function sendJsonToWebhook(url: string, data: object): Promise<void
     throw error;
   }
 }
+
+/**
+ * Sends JSON data to a webhook URL via POST request.
+ * @param url - The webhook URL.
+ * @param data - The data to send as JSON.
+ */
+export async function sendJsonToWebhook(url: string, data: any): Promise<void> {
+  await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}

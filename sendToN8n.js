@@ -21,14 +21,13 @@ async function sendDataToN8n(data) {
         }
       }
     );
-
     console.log('✅ Data sent successfully:', response.data);
   } catch (error) {
     console.error('❌ Error sending data:', error.message);
   }
 }
 
-// Example usage
+// Example usage — trigger from your agent or backend
 const exampleData = {
   name: 'GrokAI Mastery',
   description: 'Advanced AI Guide',
