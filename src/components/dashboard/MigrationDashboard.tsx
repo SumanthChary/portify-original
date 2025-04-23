@@ -14,6 +14,7 @@ const MigrationDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [migratingProducts, setMigratingProducts] = useState<string[]>([]);
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
+  const [webhookUrl] = useState(N8N_WEBHOOK_URL);
   const [isWebhookTested, setIsWebhookTested] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
@@ -71,8 +72,8 @@ const MigrationDashboard = () => {
   };
 
   const startMigration = async (productId: string) => {
-    if (!N8N_WEBHOOK_URL) {
-      toast.error("Webhook URL is missing");
+    if (!webhookUrl) {
+      toast.error("Please enter an n8n webhook URL to start the migration");
       return;
     }
 
@@ -89,7 +90,7 @@ const MigrationDashboard = () => {
       const product = products.find(p => p.id === productId);
       if (!product) throw new Error("Product not found");
 
-      const response = await fetch(N8N_WEBHOOK_URL, {
+      const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,8 +129,8 @@ const MigrationDashboard = () => {
   };
 
   const startAllMigrations = () => {
-    if (!N8N_WEBHOOK_URL) {
-      toast.error("Webhook URL is missing");
+    if (!webhookUrl) {
+      toast.error("Please enter an n8n webhook URL to start the migration");
       return;
     }
 
@@ -157,19 +158,19 @@ const MigrationDashboard = () => {
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4">n8n Webhook Setup</h2>
         <p className="mb-4 text-coolGray">
-          Your n8n webhook URL is:
+          Enter your n8n webhook URL to connect the workflow:
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
-            value={N8N_WEBHOOK_URL}
+            value={webhookUrl}
             readOnly
             className="flex-grow px-4 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
           />
           <Button 
             variant="outline" 
             onClick={testWebhook}
-            disabled={isTestingWebhook}
+            disabled={isTestingWebhook || !webhookUrl}
             className="inline-flex items-center"
           >
             {isTestingWebhook ? (
@@ -206,7 +207,7 @@ const MigrationDashboard = () => {
           <h2 className="text-xl font-semibold">Your Gumroad Products</h2>
           <Button 
             onClick={startAllMigrations}
-            disabled={products.length === 0 || !N8N_WEBHOOK_URL || !isWebhookTested}
+            disabled={products.length === 0 || !webhookUrl || !isWebhookTested}
             className="mt-2 sm:mt-0 bg-cta-gradient hover:opacity-90"
           >
             Migrate All Products
@@ -236,7 +237,7 @@ const MigrationDashboard = () => {
                     : "pending"
                 }
                 onMigrate={() => startMigration(product.id)}
-                webhookReady={!!N8N_WEBHOOK_URL && isWebhookTested}
+                webhookReady={!!webhookUrl && isWebhookTested}
               />
             ))}
           </div>
