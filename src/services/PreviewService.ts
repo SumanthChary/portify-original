@@ -9,7 +9,7 @@ export const generatePreviewId = (): string => {
 };
 
 // Store products for preview
-export const storeProductsForPreview = (products: any[], previewId: string): void => {
+export const storeProductsForPreview = (products: unknown[], previewId: string): void => {
   try {
     localStorage.setItem(`preview-products-${previewId}`, JSON.stringify(products));
   } catch (error) {

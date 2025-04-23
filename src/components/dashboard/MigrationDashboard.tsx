@@ -244,7 +244,7 @@ const MigrationDashboard = () => {
       </div>
       
       <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-100">
-        <h2 className="text-xl font-semibold mb-4">Need Help Setting Up n8n?</2>
+        <h2 className="text-xl font-semibold mb-4">Need Help Setting Up n8n?</h2>
         <p className="text-coolGray mb-4">
           Follow our step-by-step guide to create the perfect n8n workflow for migrating your products.
         </p>
