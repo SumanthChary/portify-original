@@ -57,3 +57,28 @@ export async function handleProductPreview(productData: {
     console.error('Failed to send product preview:', error);
   }
 }
+
+/**
+ * Sends full product data as JSON to the n8n insert-product webhook.
+ * @param product - The product data to send.
+ * @param webhookUrl - The webhook URL to send the data to.
+ */
+export async function sendProductToWebhook(product: {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  type: string;
+  permalink: string;
+  created_at: string;
+  updated_at: string;
+  user_email: string;
+  image_url: string;
+}, webhookUrl: string): Promise<void> {
+  try {
+    await sendJsonToWebhook(webhookUrl, product);
+    console.log('Product data sent successfully.');
+  } catch (error) {
+    console.error('Failed to send product data:', error);
+  }
+}
