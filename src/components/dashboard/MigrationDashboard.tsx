@@ -85,27 +85,25 @@ const MigrationDashboard = () => {
     toast.loading(`Starting migration for product ${productId}...`);
 
     try {
-      // Here we would trigger the n8n webhook
       const product = products.find(p => p.id === productId);
       if (!product) throw new Error("Product not found");
 
+      // Send a flat product payload to n8n webhook
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          gumroadToken: gumroadService.getAccessToken(),
-          product: {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            description: product.description,
-            url: product.url,
-            image: product.image
-          },
-          user_id: "user_" + Date.now(),
-          email: "user@example.com"
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          type: product.type,
+          permalink: product.url || "",
+          image_url: product.image,
+          user_email: product.user_email || "",
+          created_at: product.created_at || new Date().toISOString(),
+          updated_at: product.updated_at || new Date().toISOString(),
         }),
       });
 
@@ -113,7 +111,6 @@ const MigrationDashboard = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Simulate migration process
       setTimeout(() => {
         setMigratingProducts(prev => prev.filter(id => id !== productId));
         setCompletedProducts(prev => [...prev, productId]);
