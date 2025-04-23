@@ -95,11 +95,16 @@ const MigrationDashboard = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          id: product.id,
           name: product.name,
-          description: product.description,
           price: product.price,
-          permalink: product.url || "",
-          image_url: product.image,
+          description: product.description,
+          type: '', // GumroadProduct has no type, send empty string
+          permalink: product.url || '',
+          image_url: product.image || '',
+          user_email: '', // No user_email in GumroadProduct, send empty string
+          created_at: '', // No created_at in GumroadProduct, send empty string
+          updated_at: '', // No updated_at in GumroadProduct, send empty string
           timestamp: new Date().toISOString()
         }),
       });
