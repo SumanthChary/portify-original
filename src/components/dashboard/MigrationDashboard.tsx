@@ -7,14 +7,13 @@ import gumroadService, { GumroadProduct } from "@/services/GumroadService";
 import ProductCard from "./ProductCard";
 import WorkflowVisualizer from "./WorkflowVisualizer";
 
-const N8N_WEBHOOK_URL = "https://portify.app.n8n.cloud/webhook/preview-product";
+const N8N_WEBHOOK_URL = "https://portify.app.n8n.cloud/webhook/migrate-gumroad";
 
 const MigrationDashboard = () => {
   const [products, setProducts] = useState<GumroadProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [migratingProducts, setMigratingProducts] = useState<string[]>([]);
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
-  const [webhookUrl] = useState(N8N_WEBHOOK_URL);
   const [isWebhookTested, setIsWebhookTested] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
 
@@ -72,8 +71,8 @@ const MigrationDashboard = () => {
   };
 
   const startMigration = async (productId: string) => {
-    if (!webhookUrl) {
-      toast.error("Please enter an n8n webhook URL to start the migration");
+    if (!N8N_WEBHOOK_URL) {
+      toast.error("Webhook URL is missing");
       return;
     }
 
@@ -90,7 +89,7 @@ const MigrationDashboard = () => {
       const product = products.find(p => p.id === productId);
       if (!product) throw new Error("Product not found");
 
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -129,8 +128,8 @@ const MigrationDashboard = () => {
   };
 
   const startAllMigrations = () => {
-    if (!webhookUrl) {
-      toast.error("Please enter an n8n webhook URL to start the migration");
+    if (!N8N_WEBHOOK_URL) {
+      toast.error("Webhook URL is missing");
       return;
     }
 
@@ -158,19 +157,19 @@ const MigrationDashboard = () => {
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4">n8n Webhook Setup</h2>
         <p className="mb-4 text-coolGray">
-          Enter your n8n webhook URL to connect the workflow:
+          Your n8n webhook URL is:
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
-            value={webhookUrl}
+            value={N8N_WEBHOOK_URL}
             readOnly
             className="flex-grow px-4 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
           />
           <Button 
             variant="outline" 
             onClick={testWebhook}
-            disabled={isTestingWebhook || !webhookUrl}
+            disabled={isTestingWebhook}
             className="inline-flex items-center"
           >
             {isTestingWebhook ? (
@@ -207,7 +206,7 @@ const MigrationDashboard = () => {
           <h2 className="text-xl font-semibold">Your Gumroad Products</h2>
           <Button 
             onClick={startAllMigrations}
-            disabled={products.length === 0 || !webhookUrl || !isWebhookTested}
+            disabled={products.length === 0 || !N8N_WEBHOOK_URL || !isWebhookTested}
             className="mt-2 sm:mt-0 bg-cta-gradient hover:opacity-90"
           >
             Migrate All Products
@@ -237,7 +236,7 @@ const MigrationDashboard = () => {
                     : "pending"
                 }
                 onMigrate={() => startMigration(product.id)}
-                webhookReady={!!webhookUrl && isWebhookTested}
+                webhookReady={!!N8N_WEBHOOK_URL && isWebhookTested}
               />
             ))}
           </div>
@@ -245,7 +244,7 @@ const MigrationDashboard = () => {
       </div>
       
       <div className="mt-12 p-6 bg-gray-50 rounded-lg border border-gray-100">
-        <h2 className="text-xl font-semibold mb-4">Need Help Setting Up n8n?</h2>
+        <h2 className="text-xl font-semibold mb-4">Need Help Setting Up n8n?</2>
         <p className="text-coolGray mb-4">
           Follow our step-by-step guide to create the perfect n8n workflow for migrating your products.
         </p>
