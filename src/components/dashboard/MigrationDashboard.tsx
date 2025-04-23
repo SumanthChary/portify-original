@@ -100,13 +100,16 @@ const MigrationDashboard = () => {
           price: product.price,
           permalink: product.url || "",
           image_url: product.image,
-          // Optionally add timestamp if needed
           timestamp: new Date().toISOString()
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Webhook error: HTTP ${response.status} - ${errorText}`);
+        toast.error(`Migration failed: HTTP ${response.status} - ${errorText}`);
+        setMigratingProducts(prev => prev.filter(id => id !== productId));
+        return;
       }
 
       setTimeout(() => {
@@ -117,7 +120,7 @@ const MigrationDashboard = () => {
 
     } catch (error) {
       console.error("Migration failed:", error);
-      toast.error("Migration failed. Please check your webhook URL and try again.");
+      toast.error("Migration failed. Please check your webhook URL and try again. " + (error instanceof Error ? error.message : ''));
       setMigratingProducts(prev => prev.filter(id => id !== productId));
     }
   };
