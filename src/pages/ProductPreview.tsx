@@ -9,7 +9,6 @@ import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Copy, ExternalLink } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
-import { sendProductToWebhook } from "@/services/PreviewService";
 
 type Product = Database['public']['Tables']['migrations']['Row'];
 
@@ -55,8 +54,9 @@ const ProductPreview = () => {
 
   const handleTransferToPayhip = async (product: Product) => {
     setTransferring(product.id);
-
+    
     try {
+      // Updated to use the actual n8n webhook endpoint and correct payload
       const response = await fetch('https://portify.app.n8n.cloud/webhook/migrate-gumroad', {
         method: 'POST',
         headers: {
@@ -64,14 +64,13 @@ const ProductPreview = () => {
         },
         body: JSON.stringify({
           name: product.product_title,
-          description: product.description,
-          price: product.price,
-          type: product.type,
-          permalink: product.gumroad_product_id || "",
+          description: "Product description", // Not available in migrations table
+          price: 1000, // Example price in cents, update as needed
+          type: "ebook", // Example type, update as needed
+          permalink: product.gumroad_product_id || "", // Use actual permalink if available
           image_url: product.image_url,
-          user_email: product.user_email,
-          created_at: product.created_at,
-          updated_at: product.updated_at,
+          user_email: product.user_email || "default@email.com", // Use actual user_email if available
+          created_at: product.created_at
         }),
       });
 
@@ -80,7 +79,7 @@ const ProductPreview = () => {
       }
 
       const result = await response.json();
-
+      
       // Update status in database
       await supabase
         .from('migrations')

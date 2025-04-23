@@ -98,12 +98,10 @@ const MigrationDashboard = () => {
           name: product.name,
           description: product.description,
           price: product.price,
-          type: product.type,
           permalink: product.url || "",
           image_url: product.image,
-          user_email: product.user_email || "",
-          created_at: product.created_at || new Date().toISOString(),
-          updated_at: product.updated_at || new Date().toISOString(),
+          // Optionally add timestamp if needed
+          timestamp: new Date().toISOString()
         }),
       });
 
