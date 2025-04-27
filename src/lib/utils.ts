@@ -55,11 +55,11 @@ export async function uploadImageToCloudinary(imageUrl: string): Promise<{ secur
 }
 
 /**
- * Formats product data for Payhip migration, including Cloudinary image URL.
- * @param product - The Gumroad product object.
- * @returns The formatted product object for Payhip.
+ * Formats Gumroad product data for Payhip migration by uploading the image to Cloudinary.
+ * @param input - The product input with name, description, price, and image_url.
+ * @returns The cleaned JSON response for Payhip migration.
  */
-export async function formatProductForPayhip(product: {
+export async function formatProductForPayhipMigration(input: {
   name: string;
   description: string;
   price: number;
@@ -70,11 +70,27 @@ export async function formatProductForPayhip(product: {
   productPrice: number;
   cloudinaryImageUrl: string;
 }> {
-  const cloudinaryResponse = await uploadImageToCloudinary(product.image_url);
+  const cloudName = 'dixi3xc8g'; // Replace with your Cloudinary cloud name if needed
+  const uploadPreset = 'portify_unsigned'; // Replace with your unsigned upload preset if needed
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+  const formData = new FormData();
+  formData.append('file', input.image_url);
+  formData.append('upload_preset', uploadPreset);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(`Cloudinary upload failed: ${response.status}`);
+  }
+  const cloudinaryResult = await response.json();
+
   return {
-    productName: product.name,
-    productDescription: product.description,
-    productPrice: product.price,
-    cloudinaryImageUrl: cloudinaryResponse.secure_url,
+    productName: input.name,
+    productDescription: input.description,
+    productPrice: input.price,
+    cloudinaryImageUrl: cloudinaryResult.secure_url,
   };
 }
