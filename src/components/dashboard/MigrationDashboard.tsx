@@ -88,7 +88,6 @@ const MigrationDashboard = () => {
       const product = products.find(p => p.id === productId);
       if (!product) throw new Error("Product not found");
 
-      // Send a flat product payload to n8n webhook
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: {
@@ -110,7 +109,12 @@ const MigrationDashboard = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        let errorText = await response.text();
+        // Try to parse JSON error if possible
+        try {
+          const json = JSON.parse(errorText);
+          errorText = JSON.stringify(json, null, 2);
+        } catch {}
         console.error(`Webhook error: HTTP ${response.status} - ${errorText}`);
         toast.error(`Migration failed: HTTP ${response.status} - ${errorText}`);
         setMigratingProducts(prev => prev.filter(id => id !== productId));
