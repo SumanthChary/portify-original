@@ -7,7 +7,7 @@ import gumroadService, { GumroadProduct } from "@/services/GumroadService";
 import ProductCard from "./ProductCard";
 import WorkflowVisualizer from "./WorkflowVisualizer";
 
-const N8N_WEBHOOK_URL = "https://portify.app.n8n.cloud/webhook/migrate-gumroad";
+const N8N_WEBHOOK_URL = "https://portify-original.app.n8n.cloud/webhook/migrate-gumroad";
 
 const MigrationDashboard = () => {
   const [products, setProducts] = useState<GumroadProduct[]>([]);

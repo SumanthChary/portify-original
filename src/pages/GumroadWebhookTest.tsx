@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,7 @@ const GumroadWebhookTest = () => {
       if (edgeFunctionError) throw new Error(edgeFunctionError.message);
       
       // Now call the n8n webhook directly
-      const n8nResponse = await fetch("https://portify.app.n8n.cloud/webhook/migrate-gumroad", {
+      const n8nResponse = await fetch("https://portify-original.app.n8n.cloud/webhook/migrate-gumroad", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

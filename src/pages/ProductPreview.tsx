@@ -13,7 +13,7 @@ import { Database } from "@/integrations/supabase/types";
 type Product = Database['public']['Tables']['migrations']['Row'];
 
 const ProductPreview = () => {
-  const { previewId } = useParams();
+  const { preview, previewId } = useParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,30 +21,36 @@ const ProductPreview = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!previewId) return;
-
-      try {
+      setLoading(true);
+      if (preview) {
+        // Fetch a single product by preview ID
+        const { data, error } = await supabase
+          .from('migrations')
+          .select('*')
+          .eq('id', preview)
+          .single();
+        if (data) setProducts([data]);
+      } else if (previewId) {
+        // Fetch all migrated products
+        const { data, error } = await supabase
+          .from('migrations')
+          .select('*')
+          .eq('status', 'migrated')
+          .order('created_at', { ascending: false });
+        if (data) setProducts(data);
+      } else {
+        // Fetch all preview products
         const { data, error } = await supabase
           .from('migrations')
           .select('*')
           .eq('gumroad_product_id', previewId)
           .eq('status', 'preview');
-
-        if (error) {
-          throw error;
-        }
-
-        setProducts(data || []);
-      } catch (error) {
-        console.error("Error fetching product preview:", error);
-        toast.error("Failed to load products");
-      } finally {
-        setLoading(false);
+        if (data) setProducts(data);
       }
+      setLoading(false);
     };
-
     fetchProducts();
-  }, [previewId]);
+  }, [preview, previewId]);
 
   const handleCopyLink = () => {
     const url = window.location.href;
@@ -57,7 +63,7 @@ const ProductPreview = () => {
     
     try {
       // Updated to use the actual n8n webhook endpoint and correct payload
-      const response = await fetch('https://portify.app.n8n.cloud/webhook/migrate-gumroad', {
+      const response = await fetch('https://portify-original.app.n8n.cloud/webhook/migrate-gumroad', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,44 +105,20 @@ const ProductPreview = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Product Preview</h1>
-            <Skeleton className="h-10 w-28" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="h-48 bg-gray-200 animate-pulse" />
-                <CardHeader>
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+        <main className="flex-grow flex items-center justify-center">
+          <span>Loading...</span>
         </main>
         <Footer />
       </div>
     );
   }
 
-  if (products.length === 0) {
+  if (!products.length) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="text-center py-16">
-            <h1 className="text-3xl font-bold mb-4">No Products Found</h1>
-            <p className="text-gray-600 mb-6">This preview link is invalid or has expired.</p>
-            <Button onClick={() => navigate('/')}>Return Home</Button>
-          </div>
+        <main className="flex-grow flex items-center justify-center">
+          <span>No migrated products found.</span>
         </main>
         <Footer />
       </div>
@@ -173,17 +155,20 @@ const ProductPreview = () => {
                 )}
               </div>
               <CardHeader>
-                <CardTitle>{product.product_title}</CardTitle>
+                <CardTitle>{product.product_title || product.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-gray-700">
                   {/* Description placeholder - not available in migrations table */}
-                  Product description would appear here.
+                  {product.description || "Product description would appear here."}
                 </p>
                 <p className="text-lg font-semibold mt-2">
                   {/* Price placeholder - not available in migrations table */}
-                  $10.00
+                  ${product.price || "10.00"}
                 </p>
+                {preview ? null : (
+                  <Button onClick={() => navigate(`/preview/${product.id}`)} className="mt-2 w-full">View Details</Button>
+                )}
               </CardContent>
               <CardFooter>
                 <Button 
@@ -206,6 +191,11 @@ const ProductPreview = () => {
             </Card>
           ))}
         </div>
+        {preview && (
+          <div className="mt-8">
+            <Button onClick={() => navigate('/preview')}>Back to All Products</Button>
+          </div>
+        )}
       </main>
       <Footer />
     </div>

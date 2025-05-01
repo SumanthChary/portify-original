@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -6,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const N8N_WEBHOOK_URL = "https://portify.app.n8n.cloud/webhook/migrate-gumroad";
+const N8N_WEBHOOK_URL = "https://portify-original.app.n8n.cloud/webhook/migrate-gumroad";
 
 serve(async (req) => {
   // Handle CORS preflight requests

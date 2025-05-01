@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowRight, CheckCircle, Clock, AlertCircle } from "lucide-react";
@@ -15,7 +14,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, status, onMigrate, webhookReady }: ProductCardProps) => {
   const handleMigration = async () => {
     try {
-      const response = await fetch('https://portify.app.n8n.cloud/webhook/migrate-gumroad', {
+      const response = await fetch('https://portify-original.app.n8n.cloud/webhook/migrate-gumroad', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
