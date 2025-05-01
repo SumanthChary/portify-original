@@ -76,11 +76,6 @@ const MigrationDashboard = () => {
       return;
     }
 
-    if (!isWebhookTested) {
-      toast.warning("Please test the webhook connection first");
-      return;
-    }
-
     setMigratingProducts(prev => [...prev, productId]);
     toast.loading(`Starting migration for product ${productId}...`);
 
@@ -88,33 +83,40 @@ const MigrationDashboard = () => {
       const product = products.find(p => p.id === productId);
       if (!product) throw new Error("Product not found");
 
+      // Build the most robust payload possible
+      const payload = {
+        id: product.id || '',
+        title: product.name || product.product_title || '',
+        description: product.description || '',
+        price: typeof product.price === 'number' ? product.price : Number(product.price) || 0,
+        image_url: product.image || product.image_url || '',
+        type: product.type || '',
+        permalink: product.url || product.permalink || '',
+        user_email: product.user_email || '',
+        created_at: product.created_at || new Date().toISOString(),
+        updated_at: product.updated_at || new Date().toISOString(),
+        timestamp: new Date().toISOString()
+      };
+
+      // Try to POST to n8n webhook
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          description: product.description,
-          type: '', // GumroadProduct has no type, send empty string
-          permalink: product.url || '',
-          image_url: product.image || '',
-          user_email: '', // No user_email in GumroadProduct, send empty string
-          created_at: '', // No created_at in GumroadProduct, send empty string
-          updated_at: '', // No updated_at in GumroadProduct, send empty string
-          timestamp: new Date().toISOString()
-        }),
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
         let errorText = await response.text();
-        // Try to parse JSON error if possible
         try {
           const json = JSON.parse(errorText);
           errorText = JSON.stringify(json, null, 2);
         } catch {}
+        // CORS/network errors may not have a response body
+        if (response.type === 'opaque') {
+          errorText = 'Possible CORS or network error. Check n8n CORS settings.';
+        }
         console.error(`Webhook error: HTTP ${response.status} - ${errorText}`);
         toast.error(`Migration failed: HTTP ${response.status} - ${errorText}`);
         setMigratingProducts(prev => prev.filter(id => id !== productId));
@@ -124,12 +126,13 @@ const MigrationDashboard = () => {
       setTimeout(() => {
         setMigratingProducts(prev => prev.filter(id => id !== productId));
         setCompletedProducts(prev => [...prev, productId]);
-        toast.success(`Successfully migrated product: ${product.name}`);
+        toast.success(`Successfully migrated product: ${product.name || product.product_title}`);
       }, 3000);
 
     } catch (error) {
+      // Network/CORS errors will be caught here
       console.error("Migration failed:", error);
-      toast.error("Migration failed. Please check your webhook URL and try again. " + (error instanceof Error ? error.message : ''));
+      toast.error("Migration failed. " + (error instanceof Error ? error.message : 'Unknown error. Check network and n8n CORS settings.'));
       setMigratingProducts(prev => prev.filter(id => id !== productId));
     }
   };

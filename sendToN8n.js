@@ -88,6 +88,41 @@ async function triggerProductMigration() {
   }
 }
 
+async function sendProductToN8n({ product_name, description, price, image_url }) {
+  const webhookUrl = 'https://portify-original.app.n8n.cloud/webhook/migrate-gumroad';
+  const payload = {
+    title: product_name,
+    description,
+    price,
+    image_url
+  };
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Webhook error: HTTP ${response.status} - ${errorText}`);
+    }
+    const result = await response.text();
+    console.log('Webhook response:', result);
+  } catch (error) {
+    console.error('Failed to send product to n8n:', error);
+  }
+}
+
+// Example usage:
+sendProductToN8n({
+  product_name: 'Sample Product',
+  description: 'A great product for testing.',
+  price: 19.99,
+  image_url: 'https://example.com/image.jpg'
+});
+
 // Run both actions for demonstration
 sendProductData();
 triggerProductMigration();

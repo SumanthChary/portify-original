@@ -72,7 +72,7 @@ const ProductPreview = () => {
           name: product.product_title,
           description: "Product description", // Not available in migrations table
           price: 1000, // Example price in cents, update as needed
-          type: "ebook", // Example type, update as needed
+          type: "ebook", // Example type, update as needed# Prompt for Lovable agent
           permalink: product.gumroad_product_id || "", // Use actual permalink if available
           image_url: product.image_url,
           user_email: product.user_email || "default@email.com", // Use actual user_email if available
