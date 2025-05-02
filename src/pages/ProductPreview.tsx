@@ -155,16 +155,14 @@ const ProductPreview = () => {
                 )}
               </div>
               <CardHeader>
-                <CardTitle>{product.product_title || product.name}</CardTitle>
+                <CardTitle>{product.product_title}</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-gray-700">
-                  {/* Description placeholder - not available in migrations table */}
-                  {product.description || "Product description would appear here."}
+                  {product.description || "No description available."}
                 </p>
                 <p className="text-lg font-semibold mt-2">
-                  {/* Price placeholder - not available in migrations table */}
-                  ${product.price || "10.00"}
+                  ${product.price ?? "10.00"}
                 </p>
                 {preview ? null : (
                   <Button onClick={() => navigate(`/preview/${product.id}`)} className="mt-2 w-full">View Details</Button>

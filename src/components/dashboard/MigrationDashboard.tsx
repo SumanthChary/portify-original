@@ -85,16 +85,12 @@ const MigrationDashboard = () => {
 
       // Build the most robust payload possible
       const payload = {
-        id: product.id || '',
-        title: product.name || product.product_title || '',
+        id: product.id,
+        title: product.name,
         description: product.description || '',
         price: typeof product.price === 'number' ? product.price : Number(product.price) || 0,
-        image_url: product.image || product.image_url || '',
-        type: product.type || '',
-        permalink: product.url || product.permalink || '',
-        user_email: product.user_email || '',
-        created_at: product.created_at || new Date().toISOString(),
-        updated_at: product.updated_at || new Date().toISOString(),
+        image_url: product.image || '',
+        url: product.url || '',
         timestamp: new Date().toISOString()
       };
 
@@ -112,7 +108,10 @@ const MigrationDashboard = () => {
         try {
           const json = JSON.parse(errorText);
           errorText = JSON.stringify(json, null, 2);
-        } catch {}
+        } catch (err) {
+          // Log error for debugging
+          console.error('Error parsing error response:', err);
+        }
         // CORS/network errors may not have a response body
         if (response.type === 'opaque') {
           errorText = 'Possible CORS or network error. Check n8n CORS settings.';
@@ -126,7 +125,7 @@ const MigrationDashboard = () => {
       setTimeout(() => {
         setMigratingProducts(prev => prev.filter(id => id !== productId));
         setCompletedProducts(prev => [...prev, productId]);
-        toast.success(`Successfully migrated product: ${product.name || product.product_title}`);
+        toast.success(`Successfully migrated product: ${product.name}`);
       }, 3000);
 
     } catch (error) {
