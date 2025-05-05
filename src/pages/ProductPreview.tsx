@@ -159,10 +159,13 @@ const ProductPreview = () => {
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-gray-700">
-                  {product.description || "No description available."}
+                  {"No description available."}
                 </p>
                 <p className="text-lg font-semibold mt-2">
-                  ${product.price ?? "10.00"}
+                  {"$10.00"}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Type: {"N/A"}
                 </p>
                 {preview ? null : (
                   <Button onClick={() => navigate(`/preview/${product.id}`)} className="mt-2 w-full">View Details</Button>
