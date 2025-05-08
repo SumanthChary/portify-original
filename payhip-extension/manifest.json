@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Payhip Product Uploader",
+  "version": "1.0",
+  "description": "Automate Payhip product uploads from products.json",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": [
+    "https://payhip.com/product/new",
+    "https://yourdomain.com/products.json"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://payhip.com/product/new"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
