@@ -1,4 +1,4 @@
-const PRODUCTS_API_URL = 'https://yourdomain.com/products.json';
+const PRODUCTS_API_URL = 'https://portify-original.lovable.app/products.json';
 
 async function fetchProducts() {
   const res = await fetch(PRODUCTS_API_URL);

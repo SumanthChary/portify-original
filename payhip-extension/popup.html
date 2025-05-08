@@ -2,13 +2,72 @@
 <html>
   <head>
     <title>Payhip Uploader</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap">
+    <style>
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: #0f172a;
+        color: #f1f5f9;
+        margin: 0;
+        padding: 0;
+        min-width: 320px;
+        min-height: 320px;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      }
+      h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 1.2rem 0 0.5rem 0;
+        color: #38bdf8;
+        text-align: center;
+      }
+      #products {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin: 1rem 0;
+        align-items: stretch;
+      }
+      .product-btn {
+        background: linear-gradient(90deg, #38bdf8 0%, #6366f1 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+        box-shadow: 0 2px 8px rgba(56,189,248,0.08);
+      }
+      .product-btn:hover {
+        background: linear-gradient(90deg, #6366f1 0%, #38bdf8 100%);
+        transform: translateY(-2px) scale(1.03);
+      }
+      #status {
+        margin-top: 1rem;
+        text-align: center;
+        color: #fbbf24;
+        font-size: 0.95rem;
+      }
+      .footer {
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #64748b;
+      }
+      ::selection {
+        background: #38bdf8;
+        color: #fff;
+      }
+    </style>
   </head>
   <body>
-    <h2>Select a product to upload:</h2>
+    <h2>Payhip Product Uploader</h2>
     <div id="products"></div>
-    <input type="file" id="fileInput" accept=".json" />
-    <button id="uploadBtn">Upload to Payhip</button>
     <div id="status"></div>
+    <div class="footer">Portify &copy; 2025</div>
     <script src="popup.js"></script>
   </body>
 </html>
