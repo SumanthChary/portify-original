@@ -19,6 +19,11 @@ function renderProducts(products) {
       btn.classList.add('selected');
       selectedProduct = product;
       document.getElementById('status').textContent = `Selected: ${product.product_title}`;
+      // Immediately send the product to the content script for auto write
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'fillForm', product: selectedProduct });
+        document.getElementById('status').textContent = 'Product sent to Payhip form!';
+      });
     };
     container.appendChild(btn);
   });
@@ -28,14 +33,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   const products = await fetchProducts();
   renderProducts(products);
 });
-
-document.getElementById('uploadBtn').onclick = () => {
-  if (!selectedProduct) {
-    document.getElementById('status').textContent = 'Please select a product first!';
-    return;
-  }
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: 'fillForm', product: selectedProduct });
-    document.getElementById('status').textContent = 'Product sent to Payhip form!';
-  });
-};
