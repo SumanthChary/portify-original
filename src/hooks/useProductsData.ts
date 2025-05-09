@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -26,23 +25,24 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps) =>
           .single();
         if (data) setProducts([data]);
       } else if (previewId) {
-        // Fetch all migrated products
-        const { data, error } = await supabase
-          .from('migrations')
-          .select('*')
-          .eq('status', 'migrated')
-          .order('created_at', { ascending: false });
-        if (data) setProducts(data);
-      } else {
-        // Fetch all preview products
+        // Fetch all products for this previewId (no status filter)
         const { data, error } = await supabase
           .from('migrations')
           .select('*')
           .eq('gumroad_product_id', previewId)
-          .eq('status', 'preview');
+          .order('created_at', { ascending: false });
+        if (data) setProducts(data);
+      } else {
+        // Fetch ALL products (no status filter)
+        const { data, error } = await supabase
+          .from('migrations')
+          .select('*')
+          .order('created_at', { ascending: false });
         if (data) setProducts(data);
       }
       setLoading(false);
+    };
+    fetchProducts();
     };
     fetchProducts();
   }, [preview, previewId]);
