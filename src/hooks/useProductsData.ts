@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
 
-type Product = Database['public']['Tables']['migrations']['Row'];
+// Remove broken import and use a generic Product type for now
+// type Product = Database['public']['Tables']['migrations']['Row'];
+type Product = {
+  id: string;
+  product_title: string;
+  image_url?: string;
+  price?: number;
+  status?: string;
+  product_type?: string;
+  created_at: string;
+};
 
 interface UseProductsDataProps {
   preview?: string;
