@@ -1,104 +1,23 @@
-import { useEffect, useState } from "react";
+
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, ExternalLink } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
-
-type Product = Database['public']['Tables']['migrations']['Row'];
+import { Copy } from "lucide-react";
+import { useProductsData } from "@/hooks/useProductsData";
+import { ProductsGrid } from "@/components/products/ProductsGrid";
 
 const ProductPreview = () => {
   const { preview, previewId } = useParams();
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [transferring, setTransferring] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      if (preview) {
-        // Fetch a single product by preview ID
-        const { data, error } = await supabase
-          .from('migrations')
-          .select('*')
-          .eq('id', preview)
-          .single();
-        if (data) setProducts([data]);
-      } else if (previewId) {
-        // Fetch all migrated products
-        const { data, error } = await supabase
-          .from('migrations')
-          .select('*')
-          .eq('status', 'migrated')
-          .order('created_at', { ascending: false });
-        if (data) setProducts(data);
-      } else {
-        // Fetch all preview products
-        const { data, error } = await supabase
-          .from('migrations')
-          .select('*')
-          .eq('gumroad_product_id', previewId)
-          .eq('status', 'preview');
-        if (data) setProducts(data);
-      }
-      setLoading(false);
-    };
-    fetchProducts();
-  }, [preview, previewId]);
+  const { products, loading, refreshProducts } = useProductsData({ preview, previewId });
 
   const handleCopyLink = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
     toast.success("Preview link copied to clipboard!");
-  };
-
-  const handleTransferToPayhip = async (product: Product) => {
-    setTransferring(product.id);
-    
-    try {
-      // Updated to use the actual n8n webhook endpoint and correct payload
-      const response = await fetch('https://portify-original.app.n8n.cloud/webhook/migrate-gumroad', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: product.product_title,
-          description: "Product description", // Not available in migrations table
-          price: 1000, // Example price in cents, update as needed
-          type: "ebook", // Example type, update as needed# Prompt for Lovable agent
-          permalink: product.gumroad_product_id || "", // Use actual permalink if available
-          image_url: product.image_url,
-          user_email: product.user_email || "default@email.com", // Use actual user_email if available
-          created_at: product.created_at
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to transfer product');
-      }
-
-      const result = await response.json();
-      
-      // Update status in database
-      await supabase
-        .from('migrations')
-        .update({ status: 'transferred' })
-        .eq('id', product.id);
-
-      toast.success(`${product.product_title} transferred to Payhip successfully!`);
-    } catch (error) {
-      console.error("Error transferring to Payhip:", error);
-      toast.error("Failed to transfer product");
-    } finally {
-      setTransferring(null);
-    }
   };
 
   if (loading) {
@@ -138,65 +57,11 @@ const ProductPreview = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <Card key={product.id} className="overflow-hidden flex flex-col">
-              <div className="h-48 overflow-hidden bg-gray-100">
-                {product.image_url ? (
-                  <img 
-                    src={product.image_url} 
-                    alt={product.product_title} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                    No Image
-                  </div>
-                )}
-              </div>
-              <CardHeader>
-                <CardTitle>{product.product_title}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-gray-700">
-                  {"No description available."}
-                </p>
-                <p className="text-lg font-semibold mt-2">
-                  {"$10.00"}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Type: {"N/A"}
-                </p>
-                {preview ? null : (
-                  <Button onClick={() => navigate(`/preview/${product.id}`)} className="mt-2 w-full">View Details</Button>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full"
-                  onClick={() => handleTransferToPayhip(product)}
-                  disabled={transferring === product.id || product.status === 'transferred'}
-                >
-                  {transferring === product.id ? (
-                    <>
-                      <span className="inline-block h-4 w-4 mr-2 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
-                      Transferring...
-                    </>
-                  ) : product.status === 'transferred' ? (
-                    'Transferred to Payhip'
-                  ) : (
-                    'Transfer to Payhip'
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-        {preview && (
-          <div className="mt-8">
-            <Button onClick={() => navigate('/preview')}>Back to All Products</Button>
-          </div>
-        )}
+        <ProductsGrid 
+          products={products} 
+          isPreviewMode={!!preview}
+          onProductUpdated={refreshProducts}
+        />
       </main>
       <Footer />
     </div>
