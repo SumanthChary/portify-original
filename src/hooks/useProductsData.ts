@@ -14,28 +14,29 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      // Always fetch ALL products from migrations table, no filter
-      const { data, error } = await supabase
-        .from('migrations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (data) setProducts(data);
-      setLoading(false);
-    };
-    fetchProducts();
+    setLoading(true);
+    supabase
+      .from('migrations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        console.log('Fetched products:', data); // DEBUG LOG
+        if (data) setProducts(data);
+        setLoading(false);
+      });
   }, []);
 
   const refreshProducts = async () => {
     setLoading(true);
-    // Always fetch ALL products from migrations table, no filter
-    const { data, error } = await supabase
+    supabase
       .from('migrations')
       .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setProducts(data);
-    setLoading(false);
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        console.log('Refreshed products:', data); // DEBUG LOG
+        if (data) setProducts(data);
+        setLoading(false);
+      });
   };
 
   return { products, loading, refreshProducts };
