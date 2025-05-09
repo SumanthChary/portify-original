@@ -16,29 +16,36 @@ type Product = Database['public']['Tables']['migrations']['Row'];
 const MigratedProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
 
   useEffect(() => {
     fetchProducts();
+    // Log that we're in the products page to help with debugging
+    console.log("MigratedProducts component mounted");
   }, []);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log("Fetching products from Supabase...");
+      
       const { data, error } = await supabase
         .from('migrations')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) {
+        console.error("Supabase error:", error);
         throw error;
       }
       
-      if (data) {
-        setProducts(data);
-      }
-    } catch (error) {
+      console.log("Products fetched:", data?.length || 0, "items");
+      setProducts(data || []);
+    } catch (error: any) {
       console.error("Error fetching products:", error);
+      setError(error.message || "Failed to fetch products");
       toast.error("Failed to fetch products");
     } finally {
       setLoading(false);
@@ -51,6 +58,7 @@ const MigratedProducts = () => {
     toast.success("Product URL copied to clipboard!");
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -76,12 +84,29 @@ const MigratedProducts = () => {
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="text-center p-8 border rounded-lg bg-red-50">
+            <h2 className="text-xl font-semibold mb-2 text-red-600">Error Loading Products</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={fetchProducts}>Try Again</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Migrated Products</h1>
+          <h1 className="text-3xl font-bold">Products ({products.length})</h1>
           <div className="flex gap-2">
             <Button 
               variant={displayMode === 'grid' ? "default" : "outline"} 
@@ -101,7 +126,8 @@ const MigratedProducts = () => {
         {products.length === 0 ? (
           <div className="text-center p-8 border rounded-lg">
             <h2 className="text-xl font-semibold mb-2">No products found</h2>
-            <p className="text-muted-foreground">Products will appear here after migration</p>
+            <p className="text-muted-foreground mb-4">Products will appear here after migration</p>
+            <Button onClick={fetchProducts}>Refresh</Button>
           </div>
         ) : displayMode === 'grid' ? (
           <ProductsGrid products={products} onProductUpdated={fetchProducts} />
