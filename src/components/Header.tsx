@@ -2,15 +2,21 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Check if the current path matches the given path
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -25,19 +31,25 @@ const Header = () => {
           </div>
           
           <nav className="hidden md:flex items-center space-x-8">
+            <Link to="/products" className={`font-medium transition-colors ${isActive('/products') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
+              Products
+            </Link>
+            <Link to="/n8n-guide" className={`font-medium transition-colors ${isActive('/n8n-guide') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
+              Guide
+            </Link>
             <a href="#features" className="font-medium text-gray-700 hover:text-coral transition-colors">
               Features
             </a>
             <a href="#how-it-works" className="font-medium text-gray-700 hover:text-coral transition-colors">
               How It Works
             </a>
-            <a href="#pricing" className="font-medium text-gray-700 hover:text-coral transition-colors">
-              Pricing
-            </a>
             {user ? (
               <>
                 <Link to="/dashboard">
-                  <Button variant="outline" className="border-coral text-coral hover:text-white hover:bg-coral">
+                  <Button 
+                    variant={isActive('/dashboard') ? "default" : "outline"} 
+                    className={isActive('/dashboard') ? "bg-coral" : "border-coral text-coral hover:text-white hover:bg-coral"}
+                  >
                     Dashboard
                   </Button>
                 </Link>
@@ -74,6 +86,12 @@ const Header = () => {
         {/* Mobile menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-3">
+            <Link to="/products" className={`block font-medium py-2 ${isActive('/products') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
+              Products
+            </Link>
+            <Link to="/n8n-guide" className={`block font-medium py-2 ${isActive('/n8n-guide') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
+              Guide
+            </Link>
             <a href="#features" className="block font-medium text-gray-700 hover:text-coral py-2">
               Features
             </a>

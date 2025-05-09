@@ -20,9 +20,8 @@ const MigratedProducts = () => {
   const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
 
   useEffect(() => {
+    console.log("MigratedProducts component mounted - Starting to fetch products");
     fetchProducts();
-    // Log that we're in the products page to help with debugging
-    console.log("MigratedProducts component mounted");
   }, []);
 
   const fetchProducts = async () => {
@@ -41,7 +40,7 @@ const MigratedProducts = () => {
         throw error;
       }
       
-      console.log("Products fetched:", data?.length || 0, "items");
+      console.log("Products fetched successfully:", data?.length || 0, "items");
       setProducts(data || []);
     } catch (error: any) {
       console.error("Error fetching products:", error);
@@ -101,35 +100,53 @@ const MigratedProducts = () => {
     );
   }
 
+  // No products state
+  if (products.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Products (0)</h1>
+            <Button onClick={fetchProducts}>Refresh</Button>
+          </div>
+          <div className="text-center p-8 border rounded-lg">
+            <h2 className="text-xl font-semibold mb-2">No products found</h2>
+            <p className="text-muted-foreground mb-4">Products will appear here after migration</p>
+            <Button onClick={fetchProducts}>Refresh</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Products ({products.length})</h1>
-          <div className="flex gap-2">
-            <Button 
-              variant={displayMode === 'grid' ? "default" : "outline"} 
-              onClick={() => setDisplayMode('grid')}
-            >
-              <Grid2X2 className="w-4 h-4 mr-2" /> Grid View
-            </Button>
-            <Button 
-              variant={displayMode === 'table' ? "default" : "outline"} 
-              onClick={() => setDisplayMode('table')}
-            >
-              <LayoutList className="w-4 h-4 mr-2" /> Table View
-            </Button>
+          <div className="flex gap-4">
+            <Button onClick={fetchProducts}>Refresh</Button>
+            <div className="flex gap-2">
+              <Button 
+                variant={displayMode === 'grid' ? "default" : "outline"} 
+                onClick={() => setDisplayMode('grid')}
+              >
+                <Grid2X2 className="w-4 h-4 mr-2" /> Grid View
+              </Button>
+              <Button 
+                variant={displayMode === 'table' ? "default" : "outline"} 
+                onClick={() => setDisplayMode('table')}
+              >
+                <LayoutList className="w-4 h-4 mr-2" /> Table View
+              </Button>
+            </div>
           </div>
         </div>
 
-        {products.length === 0 ? (
-          <div className="text-center p-8 border rounded-lg">
-            <h2 className="text-xl font-semibold mb-2">No products found</h2>
-            <p className="text-muted-foreground mb-4">Products will appear here after migration</p>
-            <Button onClick={fetchProducts}>Refresh</Button>
-          </div>
-        ) : displayMode === 'grid' ? (
+        {displayMode === 'grid' ? (
           <ProductsGrid products={products} onProductUpdated={fetchProducts} />
         ) : (
           <div className="overflow-x-auto">
