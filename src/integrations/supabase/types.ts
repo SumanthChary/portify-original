@@ -12,29 +12,44 @@ export type Database = {
       migrations: {
         Row: {
           created_at: string
+          description: string | null
           gumroad_product_id: string
           id: string
           image_url: string | null
+          permalink: string | null
+          price: string | null
           product_title: string
+          product_type: string | null
           status: string | null
+          updated_at: string | null
           user_email: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           gumroad_product_id: string
           id?: string
           image_url?: string | null
+          permalink?: string | null
+          price?: string | null
           product_title: string
+          product_type?: string | null
           status?: string | null
+          updated_at?: string | null
           user_email: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           gumroad_product_id?: string
           id?: string
           image_url?: string | null
+          permalink?: string | null
+          price?: string | null
           product_title?: string
+          product_type?: string | null
           status?: string | null
+          updated_at?: string | null
           user_email?: string
         }
         Relationships: []

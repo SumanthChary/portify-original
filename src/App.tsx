@@ -14,6 +14,7 @@ import ProductPreview from "./pages/ProductPreview";
 import WebhookReceiver from "./pages/WebhookReceiver";
 import GumroadWebhookTest from "./pages/GumroadWebhookTest";
 import AutomationAgent from "./pages/AutomationAgent";
+import MigratedProducts from "./pages/MigratedProducts";
 import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/automation-agent" element={<AutomationAgent />} />
+            <Route path="/products" element={<MigratedProducts />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
