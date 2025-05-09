@@ -43,13 +43,10 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps) =>
       setLoading(false);
     };
     fetchProducts();
-    };
-    fetchProducts();
   }, [preview, previewId]);
 
   const refreshProducts = async () => {
     setLoading(true);
-    // Reuse the same logic as in fetchProducts
     if (preview) {
       const { data, error } = await supabase
         .from('migrations')
@@ -61,15 +58,14 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps) =>
       const { data, error } = await supabase
         .from('migrations')
         .select('*')
-        .eq('status', 'migrated')
+        .eq('gumroad_product_id', previewId)
         .order('created_at', { ascending: false });
       if (data) setProducts(data);
     } else {
       const { data, error } = await supabase
         .from('migrations')
         .select('*')
-        .eq('gumroad_product_id', previewId)
-        .eq('status', 'preview');
+        .order('created_at', { ascending: false });
       if (data) setProducts(data);
     }
     setLoading(false);
