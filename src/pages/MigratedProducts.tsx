@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Grid2X2, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ProductsGrid } from "@/components/products/ProductsGrid";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Product = Database['public']['Tables']['migrations']['Row'];
 
@@ -18,31 +19,31 @@ const MigratedProducts = () => {
   const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('migrations')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          setProducts(data);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        toast.error("Failed to fetch products");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchProducts();
   }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('migrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setProducts(data);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      toast.error("Failed to fetch products");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopyUrl = (product: Product) => {
     const previewUrl = `${window.location.origin}/preview/${product.id}`;
@@ -56,8 +57,18 @@ const MigratedProducts = () => {
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold mb-6">Migrated Products</h1>
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array(6).fill(0).map((_, index) => (
+              <div key={index} className="border rounded-lg overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <div className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3 mb-4" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            ))}
           </div>
         </main>
         <Footer />
@@ -76,13 +87,13 @@ const MigratedProducts = () => {
               variant={displayMode === 'grid' ? "default" : "outline"} 
               onClick={() => setDisplayMode('grid')}
             >
-              Grid View
+              <Grid2X2 className="w-4 h-4 mr-2" /> Grid View
             </Button>
             <Button 
               variant={displayMode === 'table' ? "default" : "outline"} 
               onClick={() => setDisplayMode('table')}
             >
-              Table View
+              <LayoutList className="w-4 h-4 mr-2" /> Table View
             </Button>
           </div>
         </div>
@@ -93,43 +104,7 @@ const MigratedProducts = () => {
             <p className="text-muted-foreground">Products will appear here after migration</p>
           </div>
         ) : displayMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product.id} className="overflow-hidden flex flex-col h-full">
-                <div className="h-48 overflow-hidden bg-gray-100">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.product_title} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                      No Image
-                    </div>
-                  )}
-                </div>
-                <CardHeader>
-                  <CardTitle>{product.product_title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-gray-500">Status: <span className="font-medium capitalize">{product.status || "Unknown"}</span></p>
-                  <p className="text-sm text-gray-500">Type: <span className="font-medium">{product.product_type || "N/A"}</span></p>
-                  <p className="text-sm text-gray-500">Price: <span className="font-medium">{product.price || "N/A"}</span></p>
-                </CardContent>
-                <CardFooter className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleCopyUrl(product)}>
-                    Copy Link
-                  </Button>
-                  <Button size="sm" asChild>
-                    <a href={`/preview/${product.id}`} target="_blank" rel="noopener noreferrer">
-                      View Preview <ExternalLink className="w-4 h-4 ml-1" />
-                    </a>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <ProductsGrid products={products} onProductUpdated={fetchProducts} />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -171,7 +146,7 @@ const MigratedProducts = () => {
                       </Button>
                       <Button size="sm" asChild>
                         <a href={`/preview/${product.id}`} target="_blank" rel="noopener noreferrer">
-                          View
+                          View <ExternalLink className="w-4 h-4 ml-1" />
                         </a>
                       </Button>
                     </TableCell>
