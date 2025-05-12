@@ -68,64 +68,16 @@ const HeroSection = () => {
           
           <div className="md:col-span-6 lg:col-span-7 animate-slideUp" style={{ animationDelay: "0.3s" }}>
             <div className="relative">
-              {/* MacBook Design */}
-              <div className="macbook-container">
-                {/* MacBook Body */}
-                <div className="macbook-body bg-gray-100 rounded-t-xl border-t border-l border-r border-gray-300 p-3">
-                  {/* Screen */}
-                  <div className="macbook-screen bg-white rounded-lg overflow-hidden shadow-inner border border-gray-200">
-                    {/* Screen Content */}
-                    <div className="h-[350px] relative overflow-hidden">
-                      {/* Mac Status Bar */}
-                      <div className="h-6 w-full bg-gray-800 flex items-center justify-between px-4">
-                        <div className="flex space-x-1.5">
-                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                        </div>
-                        <div className="text-white text-xs">Portify</div>
-                        <div className="text-white text-xs">9:41 AM</div>
-                      </div>
-                      
-                      {/* Dashboard Content */}
-                      <div className="px-5 py-6">
-                        <div className="text-lg font-semibold mb-3">Product Migration Dashboard</div>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <div className="text-sm font-medium mb-1">Gumroad</div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 rounded-full bg-green-400 mr-2"></div>
-                              <span className="text-xs text-gray-600">Connected</span>
-                            </div>
-                          </div>
-                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <div className="text-sm font-medium mb-1">Payhip</div>
-                            <div className="flex items-center">
-                              <div className="w-3 h-3 rounded-full bg-gray-300 mr-2"></div>
-                              <span className="text-xs text-gray-600">Not connected</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <div className="text-sm font-medium">Migration Progress</div>
-                            <div className="text-xs text-gray-600">6/12 Products</div>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-coral h-2 rounded-full w-1/2"></div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-500 flex items-center">
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          Live connection to Gumroad API
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* MacBook Bottom */}
-                <div className="macbook-bottom bg-gray-100 h-3 rounded-b-xl mx-auto w-[90%] border-b border-l border-r border-gray-300 shadow-lg"></div>
+              {/* 3D Robot Animation */}
+              <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-xl border border-gray-200">
+                <iframe 
+                  src='https://my.spline.design/greetingrobot-kYbjBuvUrxZ9C2SHQh2FzjwD/' 
+                  frameBorder='0' 
+                  width='100%' 
+                  height='100%'
+                  title="3D Robot Animation"
+                  className="bg-white"
+                ></iframe>
               </div>
             </div>
           </div>
