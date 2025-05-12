@@ -1,12 +1,14 @@
 
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import Spline from '@splinetool/react-spline';
 
 const HeroSection = () => {
   const [loading, setLoading] = useState(false);
+  const [splineLoaded, setSplineLoaded] = useState(false);
   const navigate = useNavigate();
 
   const handleStartTransfer = () => {
@@ -19,6 +21,10 @@ const HeroSection = () => {
       toast.success("Transfer tools ready!");
       navigate("/dashboard");
     }, 1000);
+  };
+
+  const handleSplineLoad = () => {
+    setSplineLoaded(true);
   };
 
   return (
@@ -68,16 +74,21 @@ const HeroSection = () => {
           
           <div className="md:col-span-6 lg:col-span-7 animate-slideUp" style={{ animationDelay: "0.3s" }}>
             <div className="relative">
-              {/* 3D Robot Animation */}
               <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-xl border border-gray-200">
-                <iframe 
-                  src='https://my.spline.design/greetingrobot-kYbjBuvUrxZ9C2SHQh2FzjwD/' 
-                  frameBorder='0' 
-                  width='100%' 
-                  height='100%'
-                  title="3D Robot Animation"
-                  className="bg-white"
-                ></iframe>
+                {/* Fallback while Spline loads */}
+                {!splineLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white">
+                    <div className="animate-pulse text-gray-400">Loading 3D model...</div>
+                  </div>
+                )}
+                
+                <Suspense fallback={<div className="w-full h-full bg-white flex items-center justify-center">Loading...</div>}>
+                  <Spline
+                    scene="https://prod.spline.design/09-kWqGz5641trLg/scene.splinecode"
+                    className="bg-white w-full h-full"
+                    onLoad={handleSplineLoad}
+                  />
+                </Suspense>
               </div>
             </div>
           </div>

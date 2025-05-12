@@ -1,16 +1,21 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
-// Remove broken import and use a generic Product type for now
-// type Product = Database['public']['Tables']['migrations']['Row'];
+// Define the Product type to match the database structure
 type Product = {
   id: string;
   product_title: string;
   image_url?: string;
-  price?: number;
+  price?: string; // Changed from number to string to match database
   status?: string;
   product_type?: string;
   created_at: string;
+  description?: string;
+  gumroad_product_id?: string;
+  permalink?: string;
+  updated_at?: string;
+  user_email?: string;
 };
 
 interface UseProductsDataProps {
@@ -30,7 +35,7 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps) =>
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         console.log('Fetched products:', data); // DEBUG LOG
-        if (data) setProducts(data);
+        if (data) setProducts(data as Product[]);
         setLoading(false);
       });
   }, []);
@@ -43,7 +48,7 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps) =>
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         console.log('Refreshed products:', data); // DEBUG LOG
-        if (data) setProducts(data);
+        if (data) setProducts(data as Product[]);
         setLoading(false);
       });
   };

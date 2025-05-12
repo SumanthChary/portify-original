@@ -58,7 +58,7 @@ const ProductPreview = () => {
         </div>
 
         <ProductsGrid 
-          products={products} 
+          products={products}
           isPreviewMode={!!preview}
           onProductUpdated={refreshProducts}
         />
