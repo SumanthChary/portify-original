@@ -29,10 +29,10 @@ const HeroSection = () => {
 
   // User avatar images for testimonial section
   const userAvatars = [
-    "/avatar-1.jpg",
-    "/avatar-2.jpg",
-    "/avatar-3.jpg",
-    "/avatar-4.jpg",
+    "/lovable-uploads/d7df8f5a-8395-447b-838f-d7e59b2ca3ff.png",
+    "/lovable-uploads/a03edee2-6568-436e-974d-3d544d149b85.png",
+    "/lovable-uploads/6326653b-23d5-431a-a677-b7895e49945c.png",
+    "/lovable-uploads/d2c10872-2782-4957-a633-8ffbf2e2900f.png",
   ];
 
   return (
