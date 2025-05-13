@@ -40,6 +40,9 @@ const Header = () => {
             <a href="#features" className="font-medium text-gray-700 hover:text-coral transition-colors">
               Features
             </a>
+            <a href="#how-it-works" className="font-medium text-gray-700 hover:text-coral transition-colors">
+              How It Works
+            </a>
             {user ? (
               <>
                 <Link to="/dashboard">
@@ -91,6 +94,9 @@ const Header = () => {
             </Link>
             <a href="#features" className="block font-medium text-gray-700 hover:text-coral py-2">
               Features
+            </a>
+            <a href="#how-it-works" className="block font-medium text-gray-700 hover:text-coral py-2">
+              How It Works
             </a>
             <a href="#pricing" className="block font-medium text-gray-700 hover:text-coral py-2">
               Pricing
