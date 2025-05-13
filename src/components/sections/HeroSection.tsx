@@ -27,6 +27,14 @@ const HeroSection = () => {
     setSplineLoaded(true);
   };
 
+  // User avatar images for testimonial section
+  const userAvatars = [
+    "/avatar-1.jpg",
+    "/avatar-2.jpg",
+    "/avatar-3.jpg",
+    "/avatar-4.jpg",
+  ];
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-r from-offwhite to-mint/5 pt-16 md:pt-20 lg:pt-28">
       <div className="section-container">
@@ -62,8 +70,22 @@ const HeroSection = () => {
             
             <div className="flex items-center pt-4">
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-gray-300 border-2 border-white" />
+                {userAvatars.map((avatar, i) => (
+                  <div 
+                    key={i} 
+                    className="w-8 h-8 rounded-full border-2 border-white overflow-hidden"
+                    style={{ zIndex: 4 - i }}
+                  >
+                    <img 
+                      src={avatar}
+                      alt={`User avatar ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User${i + 1}&background=random`;
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
               <p className="ml-4 text-sm text-coolGray">
