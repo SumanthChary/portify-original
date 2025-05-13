@@ -4,9 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Database } from "@/integrations/supabase/types";
-
-type Product = Database['public']['Tables']['migrations']['Row'];
+import { type Product } from "@/hooks/useProductsData";
 
 interface ProductCardProps {
   product: Product;
@@ -30,12 +28,12 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
         },
         body: JSON.stringify({
           name: product.product_title,
-          description: "Product description", // Not available in migrations table
-          price: 1000, // Example price in cents, update as needed
-          type: "ebook", // Example type, update as needed
-          permalink: product.gumroad_product_id || "", // Use actual permalink if available
-          image_url: product.image_url,
-          user_email: product.user_email || "default@email.com", // Use actual user_email if available
+          description: product.description || "No description provided", 
+          price: product.price || "0.00",
+          type: product.product_type || "digital", 
+          permalink: product.permalink || product.gumroad_product_id || "", 
+          image_url: product.image_url || "",
+          user_email: product.user_email || "default@email.com", 
           created_at: product.created_at
         }),
       });
@@ -43,8 +41,6 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
       if (!response.ok) {
         throw new Error('Failed to transfer product');
       }
-
-      const result = await response.json();
       
       toast.success(`${product.product_title} transferred to Payhip successfully!`);
       if (onTransferSuccess) onTransferSuccess();
@@ -55,6 +51,9 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
       setTransferring(false);
     }
   };
+
+  // Format price to display properly
+  const displayPrice = product.price ? `$${product.price}` : "Price not available";
 
   return (
     <Card className="overflow-hidden flex flex-col">
@@ -72,17 +71,23 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
         )}
       </div>
       <CardHeader>
-        <CardTitle>{product.product_title}</CardTitle>
+        <CardTitle className="line-clamp-2">{product.product_title}</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-gray-700">
-          {"No description available."}
-        </p>
+        {product.description ? (
+          <p className="text-gray-700 line-clamp-3">
+            {product.description}
+          </p>
+        ) : (
+          <p className="text-gray-500 italic">
+            No description available.
+          </p>
+        )}
         <p className="text-lg font-semibold mt-2">
-          {"$10.00"}
+          {displayPrice}
         </p>
         <p className="text-sm text-gray-500 mt-1">
-          Type: {"N/A"}
+          Type: {product.product_type || "N/A"}
         </p>
         {showDetailsButton && (
           <Button onClick={() => navigate(`/preview/${product.id}`)} className="mt-2 w-full">View Details</Button>

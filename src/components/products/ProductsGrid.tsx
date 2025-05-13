@@ -2,9 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { ProductCard } from "./ProductCard";
 import { Button } from "@/components/ui/button";
-import { Database } from "@/integrations/supabase/types";
-
-type Product = Database['public']['Tables']['migrations']['Row'];
+import { type Product } from "@/hooks/useProductsData";
 
 interface ProductsGridProps {
   products: Product[];
@@ -29,7 +27,7 @@ export const ProductsGrid = ({ products, isPreviewMode = false, onProductUpdated
       </div>
       {isPreviewMode && (
         <div className="mt-8">
-          <Button onClick={() => navigate('/preview')}>Back to All Products</Button>
+          <Button onClick={() => navigate('/products')}>Back to All Products</Button>
         </div>
       )}
     </>

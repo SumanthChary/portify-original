@@ -1,7 +1,6 @@
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -10,49 +9,15 @@ import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProductsGrid } from "@/components/products/ProductsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
-
-type Product = Database['public']['Tables']['migrations']['Row'];
+import { useProductsData } from "@/hooks/useProductsData";
 
 const MigratedProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { products, loading, error, refreshProducts } = useProductsData();
   const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log("MigratedProducts component mounted - Starting to fetch products");
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log("Fetching products from Supabase...");
-      
-      const { data, error } = await supabase
-        .from('migrations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-      
-      console.log("Products fetched successfully:", data?.length || 0, "items");
-      setProducts(data || []);
-    } catch (error: any) {
-      console.error("Error fetching products:", error);
-      setError(error.message || "Failed to fetch products");
-      toast.error("Failed to fetch products");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCopyUrl = (product: Product) => {
-    const previewUrl = `${window.location.origin}/preview/${product.id}`;
+  const handleCopyUrl = (productId: string) => {
+    const previewUrl = `${window.location.origin}/preview/${productId}`;
     navigator.clipboard.writeText(previewUrl);
     toast.success("Product URL copied to clipboard!");
   };
@@ -92,7 +57,7 @@ const MigratedProducts = () => {
           <div className="text-center p-8 border rounded-lg bg-red-50">
             <h2 className="text-xl font-semibold mb-2 text-red-600">Error Loading Products</h2>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={fetchProducts}>Try Again</Button>
+            <Button onClick={refreshProducts}>Try Again</Button>
           </div>
         </main>
         <Footer />
@@ -108,12 +73,12 @@ const MigratedProducts = () => {
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold">Products (0)</h1>
-            <Button onClick={fetchProducts}>Refresh</Button>
+            <Button onClick={refreshProducts}>Refresh</Button>
           </div>
           <div className="text-center p-8 border rounded-lg">
             <h2 className="text-xl font-semibold mb-2">No products found</h2>
             <p className="text-muted-foreground mb-4">Products will appear here after migration</p>
-            <Button onClick={fetchProducts}>Refresh</Button>
+            <Button onClick={refreshProducts}>Refresh</Button>
           </div>
         </main>
         <Footer />
@@ -128,7 +93,7 @@ const MigratedProducts = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Products ({products.length})</h1>
           <div className="flex gap-4">
-            <Button onClick={fetchProducts}>Refresh</Button>
+            <Button onClick={refreshProducts}>Refresh</Button>
             <div className="flex gap-2">
               <Button 
                 variant={displayMode === 'grid' ? "default" : "outline"} 
@@ -147,7 +112,7 @@ const MigratedProducts = () => {
         </div>
 
         {displayMode === 'grid' ? (
-          <ProductsGrid products={products} onProductUpdated={fetchProducts} />
+          <ProductsGrid products={products} onProductUpdated={refreshProducts} />
         ) : (
           <div className="overflow-x-auto">
             <Table>
@@ -179,12 +144,12 @@ const MigratedProducts = () => {
                       )}
                     </TableCell>
                     <TableCell>{product.product_title}</TableCell>
-                    <TableCell className="capitalize">{product.status || "Unknown"}</TableCell>
+                    <TableCell className="capitalize">{product.status || "pending"}</TableCell>
                     <TableCell>{product.product_type || "N/A"}</TableCell>
                     <TableCell>{product.price || "N/A"}</TableCell>
-                    <TableCell>{new Date(product.created_at).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(product.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleCopyUrl(product)}>
+                      <Button variant="outline" size="sm" onClick={() => handleCopyUrl(product.id)}>
                         Copy Link
                       </Button>
                       <Button size="sm" asChild>

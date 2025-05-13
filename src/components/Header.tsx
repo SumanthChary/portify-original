@@ -34,14 +34,8 @@ const Header = () => {
             <Link to="/products" className={`font-medium transition-colors ${isActive('/products') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
               Products
             </Link>
-            <Link to="/n8n-guide" className={`font-medium transition-colors ${isActive('/n8n-guide') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
-              Guide
-            </Link>
             <a href="#features" className="font-medium text-gray-700 hover:text-coral transition-colors">
               Features
-            </a>
-            <a href="#how-it-works" className="font-medium text-gray-700 hover:text-coral transition-colors">
-              How It Works
             </a>
             {user ? (
               <>
@@ -89,14 +83,8 @@ const Header = () => {
             <Link to="/products" className={`block font-medium py-2 ${isActive('/products') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
               Products
             </Link>
-            <Link to="/n8n-guide" className={`block font-medium py-2 ${isActive('/n8n-guide') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
-              Guide
-            </Link>
             <a href="#features" className="block font-medium text-gray-700 hover:text-coral py-2">
               Features
-            </a>
-            <a href="#how-it-works" className="block font-medium text-gray-700 hover:text-coral py-2">
-              How It Works
             </a>
             <a href="#pricing" className="block font-medium text-gray-700 hover:text-coral py-2">
               Pricing
