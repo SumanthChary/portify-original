@@ -89,6 +89,9 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
         <p className="text-sm text-gray-500 mt-1">
           Type: {product.product_type || "N/A"}
         </p>
+        <p className="text-sm text-gray-500 mt-1">
+          Status: {product.status || "Not migrated"}
+        </p>
         {showDetailsButton && (
           <Button onClick={() => navigate(`/preview/${product.id}`)} className="mt-2 w-full">View Details</Button>
         )}
