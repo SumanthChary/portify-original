@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/sections/HeroSection";
@@ -11,20 +12,29 @@ import SecuritySection from "@/components/sections/SecuritySection";
 import CtaSection from "@/components/sections/CtaSection";
 import IntegrationsSection from "@/components/sections/IntegrationsSection";
 import FaqSection from "@/components/sections/FaqSection";
+import AcquisitionSection from "@/components/sections/AcquisitionSection";
 
 const Index = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Add animation after component mount
+    setIsLoaded(true);
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-hidden">
       <Header />
-      <main className="flex-grow">
+      <main className={`flex-grow transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         <HeroSection />
+        <AcquisitionSection />
         <HowItWorksSection />
-        <UseCasesSection />
         <FeaturesSection />
-        <IntegrationsSection />
+        <UseCasesSection />
         <TestimonialsSection />
-        <PricingSection />
+        <IntegrationsSection />
         <SecuritySection />
+        <PricingSection />
         <FaqSection />
         <CtaSection />
       </main>
