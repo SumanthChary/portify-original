@@ -88,7 +88,6 @@
 @layer base {
   * {
     @apply border-border;
-    scroll-behavior: smooth;
   }
 
   body {
@@ -115,38 +114,6 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24;
   }
 
-  /* Text gradients */
-  .text-gradient-primary {
-    @apply bg-gradient-to-br from-coral via-coral to-redAccent bg-clip-text text-transparent;
-  }
-
-  .text-gradient-secondary {
-    @apply bg-gradient-to-br from-mint via-mint to-lushGreen bg-clip-text text-transparent;
-  }
-
-  /* Glass effect */
-  .glass {
-    @apply backdrop-blur-md bg-white/70 border border-white/20 shadow-lg;
-  }
-
-  .glass-dark {
-    @apply backdrop-blur-md bg-darktext/70 border border-white/10 shadow-lg;
-  }
-
-  /* Button group */
-  .button-group {
-    @apply inline-flex rounded-md shadow-sm;
-  }
-  
-  .button-group > * {
-    @apply rounded-none first:rounded-l-md last:rounded-r-md -ml-px first:ml-0 border-r-0 last:border-r;
-  }
-
-  /* Acquisition ready badge */
-  .acquisition-badge {
-    @apply absolute -top-2 right-4 bg-coral text-white px-3 py-1 rounded-full text-xs font-medium shadow-md;
-  }
-
   /* MacBook Styling */
   .macbook-container {
     @apply w-full mx-auto relative;
@@ -167,28 +134,4 @@
     transform: translateZ(-5px);
     transform-origin: top;
   }
-  
-  /* Hide scrollbar but allow scrolling */
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Background patterns */
-  .bg-grid {
-    background-image: 
-      linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-  
-  .bg-dots {
-    background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
 }
-
