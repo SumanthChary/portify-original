@@ -1,19 +1,20 @@
+
 import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-darktext text-white pt-16 pb-8">
+    <footer className="bg-darktext text-white pt-20 pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <div className="text-2xl font-bold mb-4">
+            <div className="text-2xl font-bold mb-6">
               <span className="text-coral">port</span>
               <span className="text-white">ify</span>
             </div>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-300 mb-6 leading-relaxed">
               Move your digital products anywhere, instantly. Easy transfers between platforms with AI assistance.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-5">
               <a href="#" className="text-gray-300 hover:text-coral transition-colors">
                 <Facebook size={20} />
               </a>
@@ -30,8 +31,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
+            <ul className="space-y-3">
               <li>
                 <a href="#" className="text-gray-300 hover:text-coral transition-colors">Home</a>
               </li>
@@ -48,8 +49,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Support</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg font-semibold mb-6">Support</h3>
+            <ul className="space-y-3">
               <li>
                 <a href="#" className="text-gray-300 hover:text-coral transition-colors">Documentation</a>
               </li>
@@ -66,8 +67,8 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Legal</h3>
-            <ul className="space-y-2">
+            <h3 className="text-lg font-semibold mb-6">Legal</h3>
+            <ul className="space-y-3">
               <li>
                 <a href="#" className="text-gray-300 hover:text-coral transition-colors">Privacy Policy</a>
               </li>

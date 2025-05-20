@@ -96,6 +96,14 @@ export default {
 				"slideUp": {
 					from: { transform: "translateY(20px)", opacity: "0" },
 					to: { transform: "translateY(0)", opacity: "1" }
+				},
+				"float": {
+					"0%, 100%": { transform: "translateY(0)" },
+					"50%": { transform: "translateY(-10px)" }
+				},
+				"shimmer": {
+					"0%": { backgroundPosition: "-200% 0" },
+					"100%": { backgroundPosition: "200% 0" }
 				}
 			},
 			animation: {
@@ -103,23 +111,30 @@ export default {
 				"accordion-up": "accordion-up 0.2s ease-out",
 				"pulse": "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
 				"fadeIn": "fadeIn 0.5s ease-out forwards",
-				"slideUp": "slideUp 0.5s ease-out forwards"
+				"slideUp": "slideUp 0.5s ease-out forwards",
+				"float": "float 6s ease-in-out infinite",
+				"shimmer": "shimmer 8s ease-in-out infinite"
 			},
 			backgroundImage: {
 				'cta-gradient': 'linear-gradient(90deg, #FF6B35, #FF3B3F)',
+				'hero-gradient': 'linear-gradient(to right, #F9F9F9, rgba(104, 216, 214, 0.1))',
+				'card-gradient': 'linear-gradient(145deg, #ffffff, #f5f5f5)',
+				'shimmer-gradient': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%)'
 			},
 			fontFamily: {
-				// Update font definitions to use San Francisco
 				sans: [
-					'"SF Pro Display"', 
-					'"SF Pro Text"', 
-					'-apple-system', 
+					'"Plus Jakarta Sans"',
+					'-apple-system',
 					'BlinkMacSystemFont', 
 					'system-ui', 
 					'sans-serif'
 				],
-				poppins: ['"SF Pro Display"', '-apple-system', 'system-ui', 'sans-serif'],
-				inter: ['"SF Pro Text"', '-apple-system', 'system-ui', 'sans-serif'],
+				display: ['"Plus Jakarta Sans"', 'sans-serif'],
+			},
+			boxShadow: {
+				'soft': '0 10px 50px -12px rgba(0, 0, 0, 0.05)',
+				'card': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01)',
+				'hover': '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
 			},
 		},
 	},

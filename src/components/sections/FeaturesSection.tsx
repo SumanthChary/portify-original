@@ -42,13 +42,17 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section id="features" className="py-16 sm:py-24 bg-white">
+    <section id="features" className="py-16 sm:py-24 bg-white relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-mint/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-coral/5 rounded-full blur-3xl"></div>
+      
       <div className="section-container">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="section-title">
             Powerful <span className="text-coral">Features</span>
           </h2>
-          <p className="text-lg text-coolGray">
+          <p className="section-description">
             We've packed DigitalMigratePro with everything you need to make your product migration smooth and efficient.
           </p>
         </div>
@@ -57,9 +61,11 @@ const FeaturesSection = () => {
           {features.map((feature, index) => (
             <div 
               key={index} 
-              className="bg-white rounded-xl p-6 shadow-md border border-gray-100 gradient-hover card-hover"
+              className="feature-card"
+              data-aos="fade-up"
+              data-aos-delay={index * 100}
             >
-              <div className={`w-12 h-12 rounded-full ${feature.color} flex items-center justify-center mb-5`}>
+              <div className={`feature-icon ${feature.color}`}>
                 <feature.icon size={24} />
               </div>
               <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>

@@ -95,11 +95,19 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-semibold;
+    @apply font-display font-semibold tracking-tight;
+  }
+  
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl leading-tight;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-4xl leading-snug;
   }
 
   .card-hover {
-    @apply transition duration-300 hover:shadow-lg hover:scale-[1.02];
+    @apply transition duration-300 hover:shadow-hover hover:scale-[1.02];
   }
 
   .gradient-hover {
@@ -107,11 +115,31 @@
   }
 
   .tag-badge {
-    @apply inline-block px-3 py-1 rounded-full bg-coral/10 text-coral text-xs font-medium;
+    @apply inline-block px-4 py-1.5 rounded-full bg-coral/10 text-coral text-xs font-medium tracking-wide;
   }
 
   .section-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24;
+  }
+  
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold mb-6;
+  }
+  
+  .section-description {
+    @apply text-lg text-coolGray max-w-3xl mx-auto;
+  }
+  
+  .feature-card {
+    @apply bg-white rounded-xl p-6 shadow-card border border-gray-100 gradient-hover h-full;
+  }
+  
+  .feature-icon {
+    @apply w-12 h-12 rounded-full flex items-center justify-center mb-5;
+  }
+  
+  .styled-input {
+    @apply bg-white border border-gray-200 rounded-lg px-4 py-2 focus:border-coral focus:ring focus:ring-coral/20 outline-none transition-all;
   }
 
   /* MacBook Styling */
@@ -133,5 +161,21 @@
   .macbook-bottom {
     transform: translateZ(-5px);
     transform-origin: top;
+  }
+  
+  /* Shimmer effect */
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+  
+  .shimmer::after {
+    content: "";
+    @apply absolute top-0 -right-full w-full h-full bg-shimmer-gradient;
+    animation: shimmer 2s infinite;
+  }
+  
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
   }
 }

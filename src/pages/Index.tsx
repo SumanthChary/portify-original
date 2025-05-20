@@ -14,7 +14,7 @@ import FaqSection from "@/components/sections/FaqSection";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-offwhite">
       <Header />
       <main className="flex-grow">
         <HeroSection />

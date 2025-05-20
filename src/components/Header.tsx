@@ -20,7 +20,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
@@ -79,7 +79,7 @@ const Header = () => {
         
         {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 space-y-3">
+          <div className="md:hidden py-4 space-y-3 animate-slideUp">
             <Link to="/products" className={`block font-medium py-2 ${isActive('/products') ? 'text-coral' : 'text-gray-700 hover:text-coral'}`}>
               Products
             </Link>

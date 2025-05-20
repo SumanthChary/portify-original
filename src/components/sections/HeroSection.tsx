@@ -36,26 +36,26 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-offwhite to-mint/5 pt-16 md:pt-20 lg:pt-28">
+    <section className="relative overflow-hidden bg-hero-gradient pt-20 md:pt-24 lg:pt-32 pb-16">
       <div className="section-container">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-          <div className="md:col-span-6 lg:col-span-5 space-y-6 animate-fadeIn">
+          <div className="md:col-span-6 lg:col-span-5 space-y-8 animate-fadeIn">
             <div className="flex">
               <span className="tag-badge">AI-Powered Migration</span>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+            <h1 className="font-bold">
               Move Your Digital Products <span className="text-coral">Anywhere, Instantly.</span>
             </h1>
             
-            <p className="text-lg text-coolGray">
+            <p className="text-lg md:text-xl text-coolGray leading-relaxed">
               Easily transfer products between platforms like Gumroad, Payhip, and more with AI. No code, no hassle, no data loss.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row gap-5 pt-3">
               <Button 
                 size="lg" 
-                className="bg-cta-gradient text-white hover:opacity-90 font-medium"
+                className="bg-cta-gradient hover:opacity-90 font-medium text-base px-8 py-6"
                 onClick={handleStartTransfer}
                 disabled={loading}
               >
@@ -63,17 +63,21 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               
-              <Button size="lg" variant="outline" className="border-coral text-coral hover:bg-coral hover:text-white">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-coral text-coral hover:bg-coral hover:text-white text-base px-8 py-6"
+              >
                 Watch Demo
               </Button>
             </div>
             
             <div className="flex items-center pt-4">
-              <div className="flex -space-x-2">
+              <div className="flex -space-x-3">
                 {userAvatars.map((avatar, i) => (
                   <div 
                     key={i} 
-                    className="w-8 h-8 rounded-full border-2 border-white overflow-hidden"
+                    className="w-10 h-10 rounded-full border-2 border-white overflow-hidden"
                     style={{ zIndex: 4 - i }}
                   >
                     <img 
@@ -89,18 +93,26 @@ const HeroSection = () => {
                 ))}
               </div>
               <p className="ml-4 text-sm text-coolGray">
-                <span className="font-medium">Used by 100+ creators</span> to migrate their digital products
+                <span className="font-semibold">Trusted by 100+ creators</span> to migrate their digital products
               </p>
             </div>
           </div>
           
           <div className="md:col-span-6 lg:col-span-7 animate-slideUp" style={{ animationDelay: "0.3s" }}>
             <div className="relative">
-              <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-xl border border-gray-200">
+              <div className="w-full h-[450px] rounded-2xl overflow-hidden shadow-card bg-white border border-gray-100 animate-float">
+                {/* Decorative elements */}
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-mint/10 rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-coral/10 rounded-full blur-2xl"></div>
+                
                 {/* Fallback while Spline loads */}
                 {!splineLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white">
-                    <div className="animate-pulse text-gray-400">Loading 3D model...</div>
+                    <div className="animate-pulse flex flex-col items-center">
+                      <div className="w-16 h-16 rounded-full bg-gray-200 mb-4"></div>
+                      <div className="h-4 w-32 bg-gray-200 rounded mb-3"></div>
+                      <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                    </div>
                   </div>
                 )}
                 
@@ -117,7 +129,11 @@ const HeroSection = () => {
         </div>
       </div>
       
-      <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-offwhite to-transparent"></div>
+      <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-offwhite to-transparent"></div>
+      
+      {/* Decorative elements */}
+      <div className="absolute top-1/4 right-10 w-64 h-64 bg-mint/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 left-10 w-72 h-72 bg-coral/5 rounded-full blur-3xl"></div>
     </section>
   );
 };
