@@ -1,7 +1,7 @@
 
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, Suspense } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Spline from '@splinetool/react-spline';
@@ -36,10 +36,10 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-hero-gradient pt-20 md:pt-24 lg:pt-32 pb-16">
+    <section className="relative overflow-hidden bg-hero-gradient pt-20 md:pt-24 lg:pt-28 pb-16">
       <div className="section-container">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-          <div className="md:col-span-6 lg:col-span-5 space-y-8 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div className="md:col-span-6 space-y-8 animate-fadeIn z-10">
             <div className="flex">
               <span className="tag-badge">AI-Powered Migration</span>
             </div>
@@ -98,32 +98,23 @@ const HeroSection = () => {
             </div>
           </div>
           
-          <div className="md:col-span-6 lg:col-span-7 animate-slideUp" style={{ animationDelay: "0.3s" }}>
-            <div className="relative">
-              <div className="w-full h-[450px] rounded-2xl overflow-hidden shadow-card bg-white border border-gray-100 animate-float">
-                {/* Decorative elements */}
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-mint/10 rounded-full blur-2xl"></div>
-                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-coral/10 rounded-full blur-2xl"></div>
-                
-                {/* Fallback while Spline loads */}
-                {!splineLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white">
-                    <div className="animate-pulse flex flex-col items-center">
-                      <div className="w-16 h-16 rounded-full bg-gray-200 mb-4"></div>
-                      <div className="h-4 w-32 bg-gray-200 rounded mb-3"></div>
-                      <div className="h-3 w-24 bg-gray-200 rounded"></div>
-                    </div>
-                  </div>
-                )}
-                
-                <Suspense fallback={<div className="w-full h-full bg-white flex items-center justify-center">Loading...</div>}>
-                  <Spline
-                    scene="https://prod.spline.design/09-kWqGz5641trLg/scene.splinecode"
-                    className="bg-white w-full h-full"
-                    onLoad={handleSplineLoad}
-                  />
-                </Suspense>
+          <div className="md:col-span-6 w-full h-[500px] relative z-0">
+            {!splineLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="animate-pulse flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-gray-200 mb-4"></div>
+                  <div className="h-4 w-32 bg-gray-200 rounded mb-3"></div>
+                  <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                </div>
               </div>
+            )}
+            
+            <div className="w-full h-full overflow-hidden">
+              <Spline
+                scene="https://prod.spline.design/0-TNuSDDX8B7pLdU/scene.splinecode"
+                className="w-full h-full"
+                onLoad={handleSplineLoad}
+              />
             </div>
           </div>
         </div>
