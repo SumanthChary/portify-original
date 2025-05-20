@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import Spline from '@splinetool/react-spline';
 
 const HeroSection = () => {
   const [loading, setLoading] = useState(false);
-  const [splineLoaded, setSplineLoaded] = useState(false);
   const navigate = useNavigate();
 
   const handleStartTransfer = () => {
@@ -21,10 +19,6 @@ const HeroSection = () => {
       toast.success("Transfer tools ready!");
       navigate("/dashboard");
     }, 1000);
-  };
-
-  const handleSplineLoad = () => {
-    setSplineLoaded(true);
   };
 
   // User avatar images for testimonial section
@@ -99,22 +93,15 @@ const HeroSection = () => {
           </div>
           
           <div className="md:col-span-6 w-full h-[500px] relative z-0">
-            {!splineLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-gray-200 mb-4"></div>
-                  <div className="h-4 w-32 bg-gray-200 rounded mb-3"></div>
-                  <div className="h-3 w-24 bg-gray-200 rounded"></div>
-                </div>
-              </div>
-            )}
-            
-            <div className="w-full h-full overflow-hidden">
-              <Spline
-                scene="https://prod.spline.design/0-TNuSDDX8B7pLdU/scene.splinecode"
-                className="w-full h-full"
-                onLoad={handleSplineLoad}
-              />
+            <div className="w-full h-full overflow-hidden rounded-2xl shadow-card">
+              <iframe 
+                src='https://my.spline.design/100followers-31R86Kqyer3Oj4ZYtF1wxRQ5/' 
+                frameBorder='0' 
+                width='100%' 
+                height='100%'
+                title="Spline 3D Design"
+                className="rounded-2xl"
+              ></iframe>
             </div>
           </div>
         </div>
