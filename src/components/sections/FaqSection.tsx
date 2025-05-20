@@ -8,7 +8,7 @@ import {
 
 const faqs = [
   {
-    question: "How does DigitalMigratePro connect to my platform accounts?",
+    question: "How does Portify connect to my platform accounts?",
     answer: "We use secure OAuth connections for most platforms, which means you authorize access without sharing your passwords with us. For platforms without OAuth, we use secure API keys that you can revoke at any time."
   },
   {

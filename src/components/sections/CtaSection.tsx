@@ -36,7 +36,7 @@ const CtaSection = () => {
             <Link to="/auth">
               <Button 
                 size="lg" 
-                className="bg-cta-gradient hover:opacity-90 font-medium px-8 py-6 text-base shadow-lg animate-pulse"
+                className="bg-cta-gradient hover:opacity-90 font-medium px-8 py-6 text-base shadow-lg"
               >
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
