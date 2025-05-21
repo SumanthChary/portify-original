@@ -33,7 +33,7 @@ const HeroSection = () => {
     <section className="relative overflow-hidden bg-hero-gradient pt-20 md:pt-24 lg:pt-28 pb-16">
       <div className="section-container">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-          <div className="md:col-span-7 space-y-8 animate-fadeIn z-10">
+          <div className="md:col-span-6 space-y-8 animate-fadeIn z-10">
             <div className="flex">
               <span className="tag-badge">AI-Powered Migration</span>
             </div>
@@ -65,9 +65,34 @@ const HeroSection = () => {
                 Watch Demo
               </Button>
             </div>
+            
+            <div className="flex items-center pt-4">
+              <div className="flex -space-x-3">
+                {userAvatars.map((avatar, i) => (
+                  <div 
+                    key={i} 
+                    className="w-10 h-10 rounded-full border-2 border-white overflow-hidden"
+                    style={{ zIndex: 4 - i }}
+                  >
+                    <img 
+                      src={avatar}
+                      alt={`User avatar ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User${i + 1}&background=random`;
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="ml-4 text-sm text-coolGray">
+                <span className="font-semibold">Trusted by 100+ creators</span> to migrate their digital products
+              </p>
+            </div>
           </div>
           
-          <div className="md:col-span-12 lg:absolute lg:right-0 lg:w-3/4 h-[500px] md:h-[550px] relative z-0">
+          <div className="md:col-span-6 w-full h-[500px] relative z-0">
             <div className="w-full h-full overflow-hidden rounded-2xl shadow-card">
               <iframe 
                 src='https://my.spline.design/100followers-31R86Kqyer3Oj4ZYtF1wxRQ5/' 
@@ -78,50 +103,6 @@ const HeroSection = () => {
                 className="rounded-2xl"
               ></iframe>
             </div>
-            
-            {/* Transparent overlay for text and CTA on the 3D model */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-offwhite/90 via-offwhite/70 to-transparent lg:w-2/3 p-8 rounded-l-2xl">
-              <div className="text-center lg:text-left">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  Seamless <span className="text-coral">Product Migration</span>
-                </h2>
-                <p className="text-lg mb-6">Transform how you manage digital products with our AI-powered platform</p>
-                <Button 
-                  className="bg-cta-gradient hover:opacity-90"
-                  onClick={handleStartTransfer}
-                >
-                  Get Started Now
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Enlarged testimonial section */}
-        <div className="mt-12 md:mt-8 lg:mt-4">
-          <div className="flex items-center pt-4">
-            <div className="flex -space-x-3">
-              {userAvatars.map((avatar, i) => (
-                <div 
-                  key={i} 
-                  className="w-12 h-12 rounded-full border-2 border-white overflow-hidden"
-                  style={{ zIndex: 4 - i }}
-                >
-                  <img 
-                    src={avatar}
-                    alt={`User avatar ${i + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback if image fails to load
-                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=User${i + 1}&background=random`;
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            <p className="ml-4 text-md md:text-lg font-medium text-coolGray">
-              <span className="font-bold">Trusted by 100+ creators</span> to migrate their digital products
-            </p>
           </div>
         </div>
       </div>
