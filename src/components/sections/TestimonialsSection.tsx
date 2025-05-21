@@ -6,19 +6,19 @@ const testimonials = [
     quote: "DigitalMigratePro saved me days of work. I migrated 67 products from Gumroad to Payhip in just minutes!",
     author: "Sarah Johnson",
     role: "Digital Product Creator",
-    avatar: "/lovable-uploads/d7df8f5a-8395-447b-838f-d7e59b2ca3ff.png"
+    avatar: "/lovable-uploads/47de44e2-5e07-475f-a2a7-adc9fee9da7e.png"  // Female avatar
   },
   {
     quote: "The AI rewriting feature is a game-changer. My product descriptions are now better than the originals.",
     author: "Mark Williams",
     role: "Course Creator",
-    avatar: "/lovable-uploads/a03edee2-6568-436e-974d-3d544d149b85.png"
+    avatar: "/lovable-uploads/5ef5a80f-ba3a-4e6a-8bc8-1a86f5f99158.png"  // Male avatar
   },
   {
     quote: "Zero stress, zero data loss. Everything transferred perfectly, including all my images and files.",
     author: "Jessica Chen",
     role: "UX/UI Designer",
-    avatar: "/lovable-uploads/6326653b-23d5-431a-a677-b7895e49945c.png"
+    avatar: "/lovable-uploads/071ce28d-6d53-431f-b381-0bb44bee394d.png"  // Female avatar
   }
 ];
 

@@ -23,10 +23,10 @@ const HeroSection = () => {
 
   // User avatar images for testimonial section
   const userAvatars = [
-    "/lovable-uploads/d7df8f5a-8395-447b-838f-d7e59b2ca3ff.png",
-    "/lovable-uploads/a03edee2-6568-436e-974d-3d544d149b85.png",
-    "/lovable-uploads/6326653b-23d5-431a-a677-b7895e49945c.png",
-    "/lovable-uploads/d2c10872-2782-4957-a633-8ffbf2e2900f.png",
+    "/lovable-uploads/47de44e2-5e07-475f-a2a7-adc9fee9da7e.png", // Female profile
+    "/lovable-uploads/5ef5a80f-ba3a-4e6a-8bc8-1a86f5f99158.png", // Male profile
+    "/lovable-uploads/a61275c0-a5e2-4725-a712-fdd02a47a21d.png", // Male profile
+    "/lovable-uploads/e196a544-4dee-4f89-9062-a5538c60cd62.png", // Male profile
   ];
 
   return (
