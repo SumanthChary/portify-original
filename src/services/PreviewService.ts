@@ -24,15 +24,20 @@ export const getPreviewUrl = (previewId: string): string => {
 
 // Clean up old previews (can be called periodically)
 export const cleanupOldPreviews = (): void => {
-  const keys = Object.keys(localStorage);
-  const previewKeys = keys.filter(key => key.startsWith('preview-products-'));
-  
-  // Keep only the 10 most recent previews
-  if (previewKeys.length > 10) {
-    // Sort by timestamp if available or keep arbitrary order
-    previewKeys.slice(0, previewKeys.length - 10).forEach(key => {
-      localStorage.removeItem(key);
-    });
+  try {
+    const keys = Object.keys(localStorage);
+    const previewKeys = keys.filter(key => key.startsWith('preview-products-'));
+    
+    // Keep only the 10 most recent previews
+    if (previewKeys.length > 10) {
+      // Sort by timestamp if available or keep arbitrary order
+      previewKeys.slice(0, previewKeys.length - 10).forEach(key => {
+        localStorage.removeItem(key);
+      });
+    }
+  } catch (error) {
+    console.warn("Failed to clean up previews:", error);
+    // Continue execution even if cleanup fails
   }
 };
 
@@ -55,5 +60,6 @@ export async function handleProductPreview(productData: {
     console.log('Product preview sent successfully.');
   } catch (error) {
     console.error('Failed to send product preview:', error);
+    throw new Error(`Failed to send product preview: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
