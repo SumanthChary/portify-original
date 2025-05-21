@@ -9,7 +9,7 @@ const VideoSection = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const videoUrl = "https://yvvqfcwhskthbbjspcvi.supabase.co/storage/v1/object/public/video//Video%20for%20Portify.mp4";
-  const thumbnailUrl = "https://yvvqfcwhskthbbjspcvi.supabase.co/storage/v1/object/public/video//Screenshot%20(499).png";
+  const thumbnailUrl = "https://yvvqfcwhskthbbjspcvi.supabase.co/storage/v1/object/public/video//Screenshot%20(494).png";
 
   const handlePlayPause = () => {
     if (videoRef.current) {
