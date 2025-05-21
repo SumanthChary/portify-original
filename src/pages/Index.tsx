@@ -11,6 +11,7 @@ import SecuritySection from "@/components/sections/SecuritySection";
 import CtaSection from "@/components/sections/CtaSection";
 import IntegrationsSection from "@/components/sections/IntegrationsSection";
 import FaqSection from "@/components/sections/FaqSection";
+import VideoSection from "@/components/sections/VideoSection";
 
 const Index = () => {
   return (
@@ -18,6 +19,7 @@ const Index = () => {
       <Header />
       <main className="flex-grow">
         <HeroSection />
+        <VideoSection />
         <HowItWorksSection />
         <UseCasesSection />
         <FeaturesSection />
