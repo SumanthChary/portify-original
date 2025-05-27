@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import gumroadService, { GumroadProduct } from "@/services/GumroadService";
 import ProductCard from "./ProductCard";
 import WorkflowVisualizer from "./WorkflowVisualizer";
+import React, { AutomationHandler } from 'react';
 
 const N8N_WEBHOOK_URL = "https://portify-original.app.n8n.cloud/webhook/migrate-gumroad";
 
@@ -16,6 +17,8 @@ const MigrationDashboard = () => {
   const [completedProducts, setCompletedProducts] = useState<string[]>([]);
   const [isWebhookTested, setIsWebhookTested] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [currentProduct, setCurrentProduct] = useState<any>(null);
 
   useEffect(() => {
     fetchGumroadProducts();
@@ -154,6 +157,22 @@ const MigrationDashboard = () => {
     });
   };
 
+  const automationHandler = new AutomationHandler();
+
+  const handleMigration = async (product: any) => {
+    setMigrationStatus('running');
+    setCurrentProduct(product);
+
+    try {
+      const result = await automationHandler.migrateProduct(product);
+      console.log('Migration successful:', result);
+      setMigrationStatus('success');
+    } catch (error) {
+      console.error('Migration failed:', error);
+      setMigrationStatus('error');
+    }
+  };
+
   return (
     <div className="section-container py-8">
       <div className="mb-8">
@@ -262,6 +281,16 @@ const MigrationDashboard = () => {
             View n8n Setup Guide
           </Button>
         </Link>
+      </div>
+
+      <div className="migration-controls">
+        <button 
+          onClick={() => handleMigration(selectedProduct)}
+          disabled={migrationStatus === 'running'}
+          className="btn btn-primary"
+        >
+          {migrationStatus === 'running' ? 'Migrating...' : 'Start Migration'}
+        </button>
       </div>
     </div>
   );

@@ -1,0 +1,126 @@
+{
+  "name": "Product Migration Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "migrate-gumroad",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.file_url }}",
+        "options": {
+          "binary": true
+        }
+      },
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fileName": "/tmp/product.zip",
+        "options": {}
+      },
+      "name": "Write Binary File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "browser": "launch",
+        "launchOptions": {
+          "headless": false
+        },
+        "actions": [
+          {
+            "operation": "evaluate",
+            "code": "// Load cookies if available\ntry {\n  const fs = require('fs');\n  const cookies = JSON.parse(fs.readFileSync('/tmp/payhip_cookies.json'));\n  await context.addCookies(cookies);\n} catch (e) {\n  console.log('No saved cookies');\n}\n\n// Go to Payhip\nawait page.goto('https://payhip.com/login');\n\n// Check if login needed\nconst loginForm = await page.$('#email');\nif (loginForm) {\n  await page.fill('#email', process.env.PAYHIP_EMAIL);\n  await page.waitForTimeout(1500);\n  \n  await page.fill('#password', process.env.PAYHIP_PASSWORD);\n  await page.waitForTimeout(1500);\n  \n  await page.click('button[type=\"submit\"]');\n  await page.waitForNavigation();\n  \n  // Save cookies\n  const cookies = await context.cookies();\n  const fs = require('fs');\n  fs.writeFileSync('/tmp/payhip_cookies.json', JSON.stringify(cookies));\n}\n\n// Add product\nawait page.goto('https://payhip.com/products/new');\nawait page.waitForTimeout(2000);\n\n// Fill details\nawait page.fill('#product_name', $json.title);\nawait page.waitForTimeout(1500);\n\nawait page.fill('#product_description', $json.description);\nawait page.waitForTimeout(1500);\n\nawait page.fill('#product_price', $json.price);\nawait page.waitForTimeout(1500);\n\n// Upload file\nawait page.setInputFiles('#product_file', '/tmp/product.zip');\nawait page.waitForTimeout(2000);\n\n// Submit\nawait page.click('button[type=\"submit\"]');\nawait page.waitForNavigation();\n\nreturn { success: true };"
+          }
+        ]
+      },
+      "name": "Playwright",
+      "type": "n8n-nodes-base.playwright",
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "name": "Delay",
+      "type": "n8n-nodes-base.delay",
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Binary File": {
+      "main": [
+        [
+          {
+            "node": "Playwright",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Playwright": {
+      "main": [
+        [
+          {
+            "node": "Delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delay": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
