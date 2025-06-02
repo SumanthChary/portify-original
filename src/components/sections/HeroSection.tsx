@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -98,6 +97,8 @@ const HeroSection = () => {
               <Spline 
                 scene="https://prod.spline.design/nCaWfUKbRpTuOGOM/scene.splinecode"
                 className="w-full h-full rounded-2xl"
+                onLoad={() => console.log('Spline scene loaded successfully')}
+                onError={(error) => console.error('Spline scene loading error:', error)}
               />
             </div>
           </div>
