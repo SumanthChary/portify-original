@@ -14,13 +14,13 @@ import WebhookReceiver from "./pages/WebhookReceiver";
 import AutomationAgent from "./pages/AutomationAgent";
 import GumroadWebhookTest from "./pages/GumroadWebhookTest";
 import NotFound from "./pages/NotFound";
-import { AuthContextProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthContextProvider>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -39,7 +39,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthContextProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
