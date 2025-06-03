@@ -1,3 +1,4 @@
+
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -92,11 +93,15 @@ const HeroSection = () => {
             </div>
           </div>
           
-          <div className="md:col-span-6 w-full h-[500px] relative z-0">
-            <div className="w-full h-full overflow-hidden rounded-2xl shadow-card">
+          <div className="md:col-span-6 w-full h-[600px] relative z-0">
+            <div className="w-full h-full relative overflow-hidden">
               <Spline 
                 scene="https://prod.spline.design/nCaWfUKbRpTuOGOM/scene.splinecode"
-                className="w-full h-full rounded-2xl"
+                className="w-full h-full scale-110 transform-gpu"
+                style={{
+                  background: 'transparent',
+                  backgroundColor: 'transparent',
+                }}
                 onLoad={() => console.log('Spline scene loaded successfully')}
                 onError={(error) => console.error('Spline scene loading error:', error)}
               />
