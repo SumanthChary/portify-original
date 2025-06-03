@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ProductsDisplayToggle } from "@/components/products/ProductsDisplayToggle";
+import { RefreshCw } from "lucide-react";
 
 interface ProductsHeaderProps {
   productCount: number;
@@ -16,10 +17,20 @@ export const ProductsHeader = ({
   setDisplayMode 
 }: ProductsHeaderProps) => {
   return (
-    <div className="flex justify-between items-center mb-8">
-      <h1 className="text-3xl font-bold">Products ({productCount})</h1>
-      <div className="flex gap-4">
-        <Button onClick={refreshProducts}>Refresh</Button>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-coral to-mint bg-clip-text text-transparent">
+          Products ({productCount})
+        </h1>
+        <p className="text-coolGray mt-1">
+          Manage and migrate your digital products seamlessly
+        </p>
+      </div>
+      <div className="flex gap-3">
+        <Button onClick={refreshProducts} variant="outline" className="border-coral text-coral hover:bg-coral hover:text-white">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
         <ProductsDisplayToggle 
           displayMode={displayMode} 
           setDisplayMode={setDisplayMode} 
