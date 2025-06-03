@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -15,9 +14,10 @@ const Header = () => {
           >
             <img 
               src="/lovable-uploads/5ef5a80f-ba3a-4e6a-8bc8-1a86f5f99158.png" 
-              alt="Logo" 
+              alt="Portify Logo" 
               className="h-8 w-8"
             />
+            <span className="text-xl font-bold text-charcoal">Portify</span>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
