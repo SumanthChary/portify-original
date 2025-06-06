@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -9,10 +10,10 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div 
-            className="flex items-center space-x-2 cursor-pointer" 
+            className="cursor-pointer" 
             onClick={() => navigate('/')}
           >
-            <span className="text-xl font-bold text-charcoal">Portify</span>
+            {/* Logo section - currently empty as requested */}
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">

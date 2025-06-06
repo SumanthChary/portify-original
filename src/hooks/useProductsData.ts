@@ -36,10 +36,11 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps = {
       const { data, error: supabaseError } = await query;
       
       if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
         throw supabaseError;
       }
       
-      console.log('Fetched products:', data); // DEBUG LOG
+      console.log('Fetched products:', data);
       
       if (data) {
         setProducts(data);

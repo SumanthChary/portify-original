@@ -40,20 +40,24 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
       });
 
       if (!response.ok) {
-        throw new Error('Failed to transfer product');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const result = await response.json();
+      console.log('Transfer response:', result);
       
       toast.success(`${product.product_title} transferred to Payhip successfully!`);
       if (onTransferSuccess) onTransferSuccess();
     } catch (error) {
       console.error("Error transferring to Payhip:", error);
-      toast.error("Failed to transfer product");
+      toast.error("Failed to transfer product. Please try again.");
     } finally {
       setTransferring(false);
     }
   };
 
   const stripHtml = (html: string) => {
+    if (!html) return "";
     const doc = new DOMParser().parseFromString(html, 'text/html');
     return doc.body.textContent || "";
   };
@@ -68,15 +72,19 @@ export const ProductCard = ({ product, showDetailsButton = false, onTransferSucc
             src={product.image_url} 
             alt={product.product_title} 
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              target.nextElementSibling?.classList.remove('hidden');
+            }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-            <div className="text-center">
-              <div className="text-4xl mb-2">📦</div>
-              <div className="text-sm">No Image</div>
-            </div>
+        ) : null}
+        <div className={`w-full h-full flex items-center justify-center bg-gray-200 text-gray-400 ${product.image_url ? 'hidden' : ''}`}>
+          <div className="text-center">
+            <div className="text-4xl mb-2">📦</div>
+            <div className="text-sm">No Image</div>
           </div>
-        )}
+        </div>
         <div className="absolute top-3 right-3">
           <Badge 
             variant={product.status === 'completed' ? 'default' : 'secondary'}
