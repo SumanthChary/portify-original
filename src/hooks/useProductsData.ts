@@ -63,9 +63,24 @@ export const useProductsData = ({ preview, previewId, userEmail }: UseProductsDa
 
   const addProduct = async (productData: Partial<Product>) => {
     try {
+      // Ensure required fields are present
+      const productToInsert = {
+        product_title: productData.product_title || '',
+        user_email: productData.user_email || '',
+        gumroad_product_id: productData.gumroad_product_id || `manual-${Date.now()}`,
+        description: productData.description || null,
+        price: productData.price || null,
+        product_type: productData.product_type || 'digital',
+        image_url: productData.image_url || null,
+        permalink: productData.permalink || null,
+        status: productData.status || 'pending',
+        created_at: productData.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('migrations')
-        .insert([productData])
+        .insert([productToInsert])
         .select();
       
       if (error) throw error;
@@ -82,9 +97,14 @@ export const useProductsData = ({ preview, previewId, userEmail }: UseProductsDa
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     try {
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('migrations')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select();
       
