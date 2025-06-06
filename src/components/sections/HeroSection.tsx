@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import Spline from '@splinetool/react-spline';
 
 const HeroSection = () => {
   const [loading, setLoading] = useState(false);
@@ -93,17 +92,12 @@ const HeroSection = () => {
             </div>
           </div>
           
-          <div className="md:col-span-6 w-full h-[600px] relative z-0">
-            <div className="w-full h-full relative overflow-hidden">
-              <Spline 
-                scene="https://prod.spline.design/nCaWfUKbRpTuOGOM/scene.splinecode"
-                className="w-full h-full scale-110 transform-gpu"
-                style={{
-                  background: 'transparent',
-                  backgroundColor: 'transparent',
-                }}
-                onLoad={() => console.log('Spline scene loaded successfully')}
-                onError={(error) => console.error('Spline scene loading error:', error)}
+          <div className="md:col-span-6 w-full h-[600px] relative z-0 flex items-center justify-center">
+            <div className="w-full max-w-md mx-auto">
+              <img 
+                src="/lovable-uploads/869df871-0215-476c-83a7-3e038e4ab284.png"
+                alt="Mobile app showing product migration from Gumroad to Payhip"
+                className="w-full h-auto object-contain animate-float"
               />
             </div>
           </div>
