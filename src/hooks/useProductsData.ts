@@ -9,9 +9,10 @@ export type Product = Database['public']['Tables']['migrations']['Row'];
 interface UseProductsDataProps {
   preview?: string;
   previewId?: string;
+  userEmail?: string;
 }
 
-export const useProductsData = ({ preview, previewId }: UseProductsDataProps = {}) => {
+export const useProductsData = ({ preview, previewId, userEmail }: UseProductsDataProps = {}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps = {
     setError(null);
     
     try {
-      console.log("Fetching products with params:", { preview, previewId });
+      console.log("Fetching products with params:", { preview, previewId, userEmail });
       
       let query = supabase
         .from('migrations')
@@ -31,6 +32,11 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps = {
       // If preview ID is specified, filter by that ID
       if (previewId) {
         query = query.eq('id', previewId);
+      }
+      
+      // If user email is specified, filter by user email
+      if (userEmail) {
+        query = query.eq('user_email', userEmail);
       }
       
       const { data, error: supabaseError } = await query;
@@ -55,9 +61,55 @@ export const useProductsData = ({ preview, previewId }: UseProductsDataProps = {
     }
   };
 
+  const addProduct = async (productData: Partial<Product>) => {
+    try {
+      const { data, error } = await supabase
+        .from('migrations')
+        .insert([productData])
+        .select();
+      
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        setProducts(prev => [data[0], ...prev]);
+        return data[0];
+      }
+    } catch (err: any) {
+      console.error('Error adding product:', err);
+      throw err;
+    }
+  };
+
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    try {
+      const { data, error } = await supabase
+        .from('migrations')
+        .update(updates)
+        .eq('id', id)
+        .select();
+      
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        setProducts(prev => prev.map(p => p.id === id ? data[0] : p));
+        return data[0];
+      }
+    } catch (err: any) {
+      console.error('Error updating product:', err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
-  }, [previewId, preview]);
+  }, [previewId, preview, userEmail]);
 
-  return { products, loading, error, refreshProducts: fetchProducts };
+  return { 
+    products, 
+    loading, 
+    error, 
+    refreshProducts: fetchProducts,
+    addProduct,
+    updateProduct
+  };
 };

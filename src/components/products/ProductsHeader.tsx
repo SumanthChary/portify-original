@@ -8,19 +8,21 @@ interface ProductsHeaderProps {
   refreshProducts: () => void;
   displayMode: 'grid' | 'table';
   setDisplayMode: (mode: 'grid' | 'table') => void;
+  title?: string;
 }
 
 export const ProductsHeader = ({ 
   productCount, 
   refreshProducts, 
   displayMode, 
-  setDisplayMode 
+  setDisplayMode,
+  title = "Products"
 }: ProductsHeaderProps) => {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
       <div>
         <h1 className="text-4xl font-bold bg-gradient-to-r from-coral to-mint bg-clip-text text-transparent">
-          Products ({productCount})
+          {title} ({productCount})
         </h1>
         <p className="text-coolGray mt-1">
           Manage and migrate your digital products seamlessly

@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MigrationDashboard from "@/components/dashboard/MigrationDashboard";
+import { ProductManager } from "@/components/products/ProductManager";
 import { toast } from "sonner";
 import gumroadService from "@/services/GumroadService";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
-  const { user } = useAuth(); // Use our auth context
+  const { user } = useAuth();
   const [isGumroadConnected, setIsGumroadConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -62,20 +64,42 @@ const Dashboard = () => {
               <p className="text-lg text-coolGray">Loading...</p>
             </div>
           </div>
-        ) : isGumroadConnected ? (
-          <MigrationDashboard />
         ) : (
-          <div className="section-container text-center py-16">
-            <h1 className="text-3xl md:text-4xl font-bold mb-6">Connect Your Gumroad Account</h1>
-            <p className="text-lg text-coolGray max-w-2xl mx-auto mb-8">
-              To start migrating your products, you'll need to connect your Gumroad account first.
-            </p>
-            <button 
-              onClick={() => gumroadService.startOAuthFlow()}
-              className="bg-cta-gradient text-white px-6 py-3 rounded-md hover:opacity-90 font-medium inline-flex items-center"
-            >
-              Connect with Gumroad
-            </button>
+          <div className="section-container">
+            <Tabs defaultValue="products" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="products">My Products</TabsTrigger>
+                <TabsTrigger value="migration" disabled={!isGumroadConnected}>
+                  {isGumroadConnected ? 'Gumroad Migration' : 'Connect Gumroad First'}
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="products">
+                <ProductManager 
+                  title="My Products"
+                  showAddButton={true}
+                />
+              </TabsContent>
+              
+              <TabsContent value="migration">
+                {isGumroadConnected ? (
+                  <MigrationDashboard />
+                ) : (
+                  <div className="text-center py-16">
+                    <h1 className="text-3xl md:text-4xl font-bold mb-6">Connect Your Gumroad Account</h1>
+                    <p className="text-lg text-coolGray max-w-2xl mx-auto mb-8">
+                      To start migrating your products, you'll need to connect your Gumroad account first.
+                    </p>
+                    <button 
+                      onClick={() => gumroadService.startOAuthFlow()}
+                      className="bg-cta-gradient text-white px-6 py-3 rounded-md hover:opacity-90 font-medium inline-flex items-center"
+                    >
+                      Connect with Gumroad
+                    </button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </main>
