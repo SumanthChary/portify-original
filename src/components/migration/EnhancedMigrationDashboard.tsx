@@ -42,12 +42,18 @@ export const EnhancedMigrationDashboard = () => {
   }, [migrationStatuses]);
 
   const checkN8nConnection = async () => {
-    const connected = await n8nWorkflowService.testConnection();
-    setIsConnected(connected);
-    if (connected) {
-      toast.success("🔗 N8n connection successful!");
-    } else {
-      toast.error("❌ N8n connection failed. Check your webhook URL.");
+    try {
+      const connected = await n8nWorkflowService.testConnection();
+      setIsConnected(connected);
+      if (connected) {
+        toast.success("🔗 N8n connection successful!");
+      } else {
+        toast.error("❌ N8n connection failed. Check your webhook URL.");
+      }
+    } catch (error) {
+      console.error("Connection test error:", error);
+      setIsConnected(false);
+      toast.error("❌ Connection test failed");
     }
   };
 
@@ -101,7 +107,7 @@ export const EnhancedMigrationDashboard = () => {
       gumroad_product_id: product.id,
       permalink: product.url,
       product_type: 'digital',
-      file_url: product.file_url || ''
+      file_url: '' // Default empty since GumroadProduct doesn't have file_url
     };
 
     try {
@@ -158,7 +164,7 @@ export const EnhancedMigrationDashboard = () => {
       gumroad_product_id: product.id,
       permalink: product.url,
       product_type: 'digital',
-      file_url: product.file_url || ''
+      file_url: '' // Default empty since GumroadProduct doesn't have file_url
     }));
 
     payloads.forEach(payload => {
@@ -432,7 +438,7 @@ export const EnhancedMigrationDashboard = () => {
                   return (
                     <div key={productId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
-                        {getStatusIcon(status.status)}
+                        {getStageIcon(status.stage)}
                         <div>
                           <p className="font-medium">{product?.name || productId}</p>
                           <p className="text-sm text-coolGray">{status.message}</p>
@@ -447,7 +453,7 @@ export const EnhancedMigrationDashboard = () => {
                             </p>
                           )}
                         </div>
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(status.status)}`} />
+                        <div className={`w-3 h-3 rounded-full ${getStageColor(status.stage)}`} />
                       </div>
                     </div>
                   );
