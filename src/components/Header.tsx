@@ -13,7 +13,9 @@ const Header = () => {
             className="cursor-pointer" 
             onClick={() => navigate('/')}
           >
-            {/* Logo section - currently empty as requested */}
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-coral to-mint bg-clip-text text-transparent">
+              Portify
+            </h1>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
