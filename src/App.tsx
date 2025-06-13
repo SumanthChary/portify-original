@@ -6,40 +6,42 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
-import Auth from "./pages/Auth";
+import EnhancedDashboard from "./pages/EnhancedDashboard";
 import MigratedProducts from "./pages/MigratedProducts";
-import ProductsDisplay from "./pages/ProductsDisplay";
 import ProductPreview from "./pages/ProductPreview";
+import ProductsDisplay from "./pages/ProductsDisplay";
 import WebhookReceiver from "./pages/WebhookReceiver";
-import AutomationAgent from "./pages/AutomationAgent";
 import GumroadWebhookTest from "./pages/GumroadWebhookTest";
+import AutomationAgent from "./pages/AutomationAgent";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <TooltipProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/products" element={<ProductsDisplay />} />
+            <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
             <Route path="/migrated-products" element={<MigratedProducts />} />
-            <Route path="/preview/:id" element={<ProductPreview />} />
+            <Route path="/product-preview/:id" element={<ProductPreview />} />
+            <Route path="/products-display" element={<ProductsDisplay />} />
             <Route path="/webhook-receiver" element={<WebhookReceiver />} />
-            <Route path="/automation" element={<AutomationAgent />} />
-            <Route path="/gumroad-test" element={<GumroadWebhookTest />} />
+            <Route path="/gumroad-webhook-test" element={<GumroadWebhookTest />} />
+            <Route path="/automation-agent" element={<AutomationAgent />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </TooltipProvider>
+        </BrowserRouter>
       </AuthProvider>
-    </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

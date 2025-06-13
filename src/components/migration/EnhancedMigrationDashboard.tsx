@@ -6,19 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Play, Pause, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { RefreshCw, Play, Pause, CheckCircle, XCircle, Clock, AlertTriangle, Zap, Database } from "lucide-react";
 import { useProductsData } from "@/hooks/useProductsData";
-import { n8nWorkflowService, type MigrationPayload } from "@/services/N8nWorkflowService";
+import { n8nWorkflowService, type MigrationPayload, type MigrationProgress } from "@/services/N8nWorkflowService";
 import gumroadService, { type GumroadProduct } from "@/services/GumroadService";
 
-interface MigrationStatus {
+interface MigrationStatus extends MigrationProgress {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'retrying';
-  progress: number;
-  message?: string;
   startTime?: Date;
   endTime?: Date;
   attempts: number;
+  payhipUrl?: string;
 }
 
 export const EnhancedMigrationDashboard = () => {
@@ -27,6 +25,7 @@ export const EnhancedMigrationDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isBulkMigrating, setIsBulkMigrating] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [activeTab, setActiveTab] = useState("overview");
   const { products: dbProducts, refreshProducts } = useProductsData();
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export const EnhancedMigrationDashboard = () => {
   }, []);
 
   useEffect(() => {
-    // Calculate overall progress
     const statuses = Array.from(migrationStatuses.values());
     if (statuses.length > 0) {
       const totalProgress = statuses.reduce((sum, status) => sum + status.progress, 0);
@@ -46,18 +44,22 @@ export const EnhancedMigrationDashboard = () => {
   const checkN8nConnection = async () => {
     const connected = await n8nWorkflowService.testConnection();
     setIsConnected(connected);
-    if (!connected) {
-      toast.error("N8n connection failed. Please check your webhook configuration.");
+    if (connected) {
+      toast.success("🔗 N8n connection successful!");
+    } else {
+      toast.error("❌ N8n connection failed. Check your webhook URL.");
     }
   };
 
   const fetchGumroadProducts = async () => {
     try {
+      toast.loading("📦 Fetching Gumroad products...");
       const products = await gumroadService.getProducts();
       setGumroadProducts(products);
+      toast.success(`✅ Found ${products.length} Gumroad products`);
     } catch (error) {
       console.error("Failed to fetch Gumroad products:", error);
-      toast.error("Failed to fetch Gumroad products");
+      toast.error("❌ Failed to fetch Gumroad products");
     }
   };
 
@@ -65,8 +67,10 @@ export const EnhancedMigrationDashboard = () => {
     setMigrationStatuses(prev => {
       const current = prev.get(productId) || {
         id: productId,
-        status: 'pending',
+        stage: 'validation' as const,
         progress: 0,
+        message: 'Initializing...',
+        timestamp: new Date().toISOString(),
         attempts: 0
       };
       const updated = { ...current, ...updates };
@@ -80,14 +84,15 @@ export const EnhancedMigrationDashboard = () => {
     const productId = product.id;
     
     updateMigrationStatus(productId, {
-      status: 'processing',
-      progress: 10,
+      stage: 'validation',
+      progress: 5,
+      message: 'Starting migration...',
       startTime: new Date(),
-      message: 'Starting migration...'
+      attempts: 1
     });
 
     const payload: MigrationPayload = {
-      user_email: "user@example.com", // You should get this from auth context
+      user_email: "user@example.com", // Get from auth context
       product_id: product.id,
       product_title: product.name,
       description: product.description || '',
@@ -95,43 +100,56 @@ export const EnhancedMigrationDashboard = () => {
       image_url: product.image || '',
       gumroad_product_id: product.id,
       permalink: product.url,
-      product_type: 'digital'
+      product_type: 'digital',
+      file_url: product.file_url || ''
     };
 
     try {
-      updateMigrationStatus(productId, { progress: 30, message: 'Sending to n8n...' });
-      
+      // Subscribe to progress updates
+      n8nWorkflowService.subscribeToProgress(productId, (progress) => {
+        updateMigrationStatus(productId, {
+          stage: progress.stage,
+          progress: progress.progress,
+          message: progress.message,
+          timestamp: progress.timestamp
+        });
+      });
+
       const result = await n8nWorkflowService.triggerMigration(payload);
       
       if (result.success) {
         updateMigrationStatus(productId, {
-          status: 'completed',
+          stage: 'complete',
           progress: 100,
+          message: result.message || 'Migration completed successfully!',
           endTime: new Date(),
-          message: result.message || 'Migration completed successfully'
+          payhipUrl: result.payhip_url
         });
-        toast.success(`${product.name} migrated successfully!`);
+        toast.success(`🎉 ${product.name} migrated successfully!`);
         refreshProducts();
       } else {
         throw new Error(result.error || 'Migration failed');
       }
     } catch (error) {
       updateMigrationStatus(productId, {
-        status: 'failed',
+        stage: 'failed',
         progress: 0,
-        endTime: new Date(),
         message: error instanceof Error ? error.message : 'Migration failed',
+        endTime: new Date(),
         attempts: (migrationStatuses.get(productId)?.attempts || 0) + 1
       });
-      toast.error(`Failed to migrate ${product.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`❌ Failed to migrate ${product.name}`);
+    } finally {
+      n8nWorkflowService.unsubscribeFromProgress(productId);
     }
   };
 
   const migrateBulk = async () => {
     setIsBulkMigrating(true);
+    toast.info("🚀 Starting bulk migration...");
     
     const payloads: MigrationPayload[] = gumroadProducts.map(product => ({
-      user_email: "user@example.com", // You should get this from auth context
+      user_email: "user@example.com",
       product_id: product.id,
       product_title: product.name,
       description: product.description || '',
@@ -139,165 +157,259 @@ export const EnhancedMigrationDashboard = () => {
       image_url: product.image || '',
       gumroad_product_id: product.id,
       permalink: product.url,
-      product_type: 'digital'
+      product_type: 'digital',
+      file_url: product.file_url || ''
     }));
 
-    // Initialize all statuses
     payloads.forEach(payload => {
       updateMigrationStatus(payload.product_id, {
-        status: 'processing',
+        stage: 'validation',
         progress: 5,
+        message: 'Queued for migration...',
         startTime: new Date(),
-        message: 'Queued for migration...'
+        attempts: 1
       });
     });
 
     try {
-      const { successes, failures, results } = await n8nWorkflowService.triggerBulkMigration(payloads);
+      const { successes, failures, results, migrationIds } = await n8nWorkflowService.triggerBulkMigration(payloads);
       
       results.forEach((result, index) => {
         const productId = payloads[index].product_id;
         if (result.success) {
           updateMigrationStatus(productId, {
-            status: 'completed',
+            stage: 'complete',
             progress: 100,
-            endTime: new Date(),
-            message: 'Migration completed successfully'
+            message: 'Bulk migration completed successfully!',
+            endTime: new Date()
           });
         } else {
           updateMigrationStatus(productId, {
-            status: 'failed',
+            stage: 'failed',
             progress: 0,
-            endTime: new Date(),
-            message: result.error || 'Migration failed'
+            message: result.error || 'Bulk migration failed',
+            endTime: new Date()
           });
         }
       });
 
-      toast.success(`Bulk migration completed: ${successes} successful, ${failures} failed`);
+      toast.success(`🎯 Bulk migration completed: ${successes} successful, ${failures} failed`);
       refreshProducts();
     } catch (error) {
-      toast.error("Bulk migration failed");
+      toast.error("❌ Bulk migration failed");
     } finally {
       setIsBulkMigrating(false);
     }
   };
 
-  const getStatusIcon = (status: MigrationStatus['status']) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />;
+  const getStageIcon = (stage: MigrationProgress['stage']) => {
+    switch (stage) {
+      case 'complete': return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'failed': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'processing': case 'retrying': return <Clock className="w-4 h-4 text-blue-500 animate-pulse" />;
+      case 'validation': case 'download': case 'login': case 'upload': case 'publish': 
+        return <Clock className="w-4 h-4 text-blue-500 animate-pulse" />;
       default: return <AlertTriangle className="w-4 h-4 text-gray-400" />;
     }
   };
 
-  const getStatusColor = (status: MigrationStatus['status']) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500';
+  const getStageColor = (stage: MigrationProgress['stage']) => {
+    switch (stage) {
+      case 'complete': return 'bg-green-500';
       case 'failed': return 'bg-red-500';
-      case 'processing': case 'retrying': return 'bg-blue-500';
+      case 'validation': case 'download': case 'login': case 'upload': case 'publish': 
+        return 'bg-blue-500';
       default: return 'bg-gray-400';
+    }
+  };
+
+  const getStageText = (stage: MigrationProgress['stage']) => {
+    switch (stage) {
+      case 'validation': return 'Validating';
+      case 'download': return 'Downloading';
+      case 'login': return 'Logging In';
+      case 'upload': return 'Uploading';
+      case 'publish': return 'Publishing';
+      case 'complete': return 'Complete';
+      case 'failed': return 'Failed';
+      default: return 'Unknown';
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Enhanced Migration Dashboard</h1>
-          <p className="text-coolGray">Advanced n8n-powered product migration system</p>
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-coral to-redAccent bg-clip-text text-transparent">
+            Portify Pro Migration
+          </h1>
+          <p className="text-coolGray text-lg">Advanced n8n-powered product migration system</p>
+          <div className="flex items-center space-x-4 text-sm">
+            <div className="flex items-center space-x-2">
+              <Zap className="w-4 h-4 text-coral" />
+              <span>N8n Workflow Engine</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Database className="w-4 h-4 text-mint" />
+              <span>Real-time Tracking</span>
+            </div>
+          </div>
         </div>
         <div className="flex gap-3">
           <Button onClick={checkN8nConnection} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Test N8n
+            Test Connection
           </Button>
-          <Badge variant={isConnected ? "default" : "destructive"}>
-            {isConnected ? "Connected" : "Disconnected"}
+          <Badge variant={isConnected ? "default" : "destructive"} className="px-3 py-1">
+            {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
           </Badge>
         </div>
       </div>
 
+      {/* Overall Progress */}
       {isBulkMigrating && (
-        <Card>
+        <Card className="border-coral/20 bg-gradient-to-r from-coral/5 to-redAccent/5">
           <CardHeader>
-            <CardTitle>Bulk Migration Progress</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Play className="w-5 h-5 text-coral" />
+              <span>Bulk Migration Progress</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Progress value={overallProgress} className="w-full" />
-            <p className="text-sm text-coolGray mt-2">
-              {Math.round(overallProgress)}% complete
+            <Progress value={overallProgress} className="w-full h-3" />
+            <p className="text-sm text-coolGray mt-3">
+              {Math.round(overallProgress)}% complete • Processing {Array.from(migrationStatuses.values()).filter(s => s.stage !== 'complete' && s.stage !== 'failed').length} products
             </p>
           </CardContent>
         </Card>
       )}
 
-      <Tabs defaultValue="products" className="w-full">
-        <TabsList>
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="products">Products ({gumroadProducts.length})</TabsTrigger>
-          <TabsTrigger value="status">Migration Status</TabsTrigger>
-          <TabsTrigger value="database">Database Products ({dbProducts.length})</TabsTrigger>
+          <TabsTrigger value="status">Live Status</TabsTrigger>
+          <TabsTrigger value="database">Database ({dbProducts.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-coral">{gumroadProducts.length}</div>
+                <p className="text-sm text-coolGray">Ready for migration</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-500">
+                  {Array.from(migrationStatuses.values()).filter(s => s.stage === 'complete').length}
+                </div>
+                <p className="text-sm text-coolGray">Successfully migrated</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-mint">
+                  {migrationStatuses.size > 0 
+                    ? Math.round((Array.from(migrationStatuses.values()).filter(s => s.stage === 'complete').length / migrationStatuses.size) * 100)
+                    : 0}%
+                </div>
+                <p className="text-sm text-coolGray">Migration accuracy</p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={migrateBulk} 
+                disabled={!isConnected || isBulkMigrating || gumroadProducts.length === 0}
+                className="w-full bg-coral hover:bg-coral/90 h-12"
+              >
+                {isBulkMigrating ? (
+                  <>
+                    <Clock className="w-5 h-5 mr-2 animate-pulse" />
+                    Migrating All Products...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5 mr-2" />
+                    Start Bulk Migration ({gumroadProducts.length} products)
+                  </>
+                )}
+              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={fetchGumroadProducts}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Products
+                </Button>
+                <Button variant="outline" onClick={refreshProducts}>
+                  <Database className="w-4 h-4 mr-2" />
+                  Refresh Database
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="products">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Gumroad Products</CardTitle>
-                <Button 
-                  onClick={migrateBulk} 
-                  disabled={!isConnected || isBulkMigrating || gumroadProducts.length === 0}
-                  className="bg-coral hover:bg-coral/90"
-                >
-                  {isBulkMigrating ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-pulse" />
-                      Migrating...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      Migrate All
-                    </>
-                  )}
-                </Button>
-              </div>
+              <CardTitle>Gumroad Products</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 {gumroadProducts.map((product) => {
                   const status = migrationStatuses.get(product.id);
                   return (
-                    <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-center space-x-4">
                         {product.image && (
-                          <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
+                          <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded-md" />
                         )}
-                        <div>
-                          <h3 className="font-medium">{product.name}</h3>
+                        <div className="space-y-1">
+                          <h3 className="font-semibold">{product.name}</h3>
                           <p className="text-sm text-coolGray">${product.price}</p>
                           {status && (
-                            <div className="flex items-center space-x-2 mt-1">
-                              {getStatusIcon(status.status)}
+                            <div className="flex items-center space-x-2">
+                              {getStageIcon(status.stage)}
                               <span className="text-xs">{status.message}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {getStageText(status.stage)}
+                              </Badge>
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         {status && (
-                          <div className="w-24">
+                          <div className="w-32">
                             <Progress value={status.progress} className="h-2" />
+                            <p className="text-xs text-center mt-1">{status.progress}%</p>
                           </div>
                         )}
                         <Button
                           onClick={() => migrateProduct(product)}
-                          disabled={!isConnected || status?.status === 'processing'}
+                          disabled={!isConnected || (status?.stage !== 'complete' && status?.stage !== 'failed' && status?.stage !== undefined)}
                           size="sm"
-                          variant="outline"
+                          variant={status?.stage === 'complete' ? "outline" : "default"}
                         >
-                          {status?.status === 'processing' ? 'Migrating...' : 'Migrate'}
+                          {status?.stage === 'complete' ? 'Completed' :
+                           status && status.stage !== 'failed' ? 'Migrating...' : 'Migrate'}
                         </Button>
                       </div>
                     </div>
