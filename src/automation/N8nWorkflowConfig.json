@@ -1,0 +1,265 @@
+
+{
+  "name": "Enhanced Portify Migration Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "migrate-gumroad",
+        "options": {
+          "noResponseBody": false
+        }
+      },
+      "name": "Migration Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "migrate-gumroad"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced product validation and preprocessing\nconst input = $json;\n\nconsole.log('📦 Processing migration request:', input.product_title);\n\n// Validate required fields\nif (!input.product_title || !input.user_email) {\n  throw new Error('Missing required fields: product_title and user_email');\n}\n\n// Clean and format data\nconst cleanedData = {\n  user_email: input.user_email.toLowerCase().trim(),\n  product_title: input.product_title.trim(),\n  description: input.description || '',\n  price: parseFloat(input.price) || 0,\n  image_url: input.image_url || '',\n  file_url: input.file_url || '',\n  gumroad_product_id: input.gumroad_product_id || input.product_id,\n  permalink: input.permalink || '',\n  product_type: input.product_type || 'digital',\n  migration_id: `migration_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,\n  timestamp: new Date().toISOString(),\n  attempt: input.attempt || 1,\n  status: 'processing'\n};\n\n// Log to database preparation\nconst dbEntry = {\n  ...cleanedData,\n  created_at: new Date().toISOString(),\n  updated_at: new Date().toISOString()\n};\n\nconsole.log('✅ Data validated and cleaned');\n\nreturn {\n  cleaned: cleanedData,\n  database: dbEntry\n};"
+      },
+      "name": "Data Validation & Cleaning",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://yvvqfcwhskthbbjspcvi.supabase.co/rest/v1/migrations",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2dnFmY3doc2t0aGJianNwY3ZpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDY5ODA3MCwiZXhwIjoyMDYwMjc0MDcwfQ.K_HoTA2ELWSfVQ2HdIKtDngjUyFn2QzqphyYB2SlaY0\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2dnFmY3doc2t0aGJianNwY3ZpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDY5ODA3MCwiZXhwIjoyMDYwMjc0MDcwfQ.K_HoTA2ELWSfVQ2HdIKtDngjUyFn2QzqphyYB2SlaY0\",\n  \"Content-Type\": \"application/json\",\n  \"Prefer\": \"return=representation\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_email",
+              "value": "={{ $json.database.user_email }}"
+            },
+            {
+              "name": "product_title",
+              "value": "={{ $json.database.product_title }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.database.description }}"
+            },
+            {
+              "name": "price",
+              "value": "={{ $json.database.price }}"
+            },
+            {
+              "name": "image_url",
+              "value": "={{ $json.database.image_url }}"
+            },
+            {
+              "name": "gumroad_product_id",
+              "value": "={{ $json.database.gumroad_product_id }}"
+            },
+            {
+              "name": "permalink",
+              "value": "={{ $json.database.permalink }}"
+            },
+            {
+              "name": "product_type",
+              "value": "={{ $json.database.product_type }}"
+            },
+            {
+              "name": "status",
+              "value": "processing"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $json.database.created_at }}"
+            },
+            {
+              "name": "updated_at",
+              "value": "={{ $json.database.updated_at }}"
+            }
+          ]
+        }
+      },
+      "name": "Save to Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "browser": "chromium",
+        "launchOptions": {
+          "headless": false,
+          "args": [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--disable-gpu"
+          ]
+        },
+        "actions": [
+          {
+            "operation": "evaluate",
+            "code": "{{ require('./EnhancedN8nPlaywrightScript.js')(page, context, $json.cleaned) }}"
+          }
+        ]
+      },
+      "name": "Enhanced Playwright Migration",
+      "type": "n8n-nodes-base.playwright",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process migration result and update database\nconst migrationResult = $json;\nconst inputData = $('Data Validation & Cleaning').first().json.cleaned;\n\nconsole.log('📊 Processing migration result:', migrationResult);\n\nconst updateData = {\n  status: migrationResult.success ? 'completed' : 'failed',\n  updated_at: new Date().toISOString()\n};\n\nif (!migrationResult.success) {\n  updateData.error_message = migrationResult.error || 'Unknown error';\n}\n\nreturn {\n  update: updateData,\n  original: inputData,\n  result: migrationResult,\n  user_email: inputData.user_email\n};"
+      },
+      "name": "Process Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://yvvqfcwhskthbbjspcvi.supabase.co/rest/v1/migrations?gumroad_product_id=eq.{{ $json.original.gumroad_product_id }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2dnFmY3doc2t0aGJianNwY3ZpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDY5ODA3MCwiZXhwIjoyMDYwMjc0MDcwfQ.K_HoTA2ELWSfVQ2HdIKtDngjUyFn2QzqphyYB2SlaY0\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2dnFmY3doc2t0aGJianNwY3ZpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDY5ODA3MCwiZXhwIjoyMDYwMjc0MDcwfQ.K_HoTA2ELWSfVQ2HdIKtDngjUyFn2QzqphyYB2SlaY0\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "={{ $json.update.status }}"
+            },
+            {
+              "name": "updated_at",
+              "value": "={{ $json.update.updated_at }}"
+            }
+          ]
+        }
+      },
+      "name": "Update Database Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.user_email }}",
+        "subject": "Migration {{ $json.result.success ? 'Completed' : 'Failed' }} - {{ $json.original.product_title }}",
+        "message": "{{ $json.result.success ? 'Your product \"' + $json.original.product_title + '\" has been successfully migrated to Payhip!' : 'Migration failed for \"' + $json.original.product_title + '\". Error: ' + ($json.result.error || 'Unknown error') }}"
+      },
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1560, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "Migration Webhook": {
+      "main": [
+        [
+          {
+            "node": "Data Validation & Cleaning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Validation & Cleaning": {
+      "main": [
+        [
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Database": {
+      "main": [
+        [
+          {
+            "node": "Enhanced Playwright Migration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Playwright Migration": {
+      "main": [
+        [
+          {
+            "node": "Process Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Result": {
+      "main": [
+        [
+          {
+            "node": "Update Database Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Database Status": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": {
+      "enabled": true
+    }
+  }
+}
