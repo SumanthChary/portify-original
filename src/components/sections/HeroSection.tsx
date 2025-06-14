@@ -26,7 +26,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative bg-hero-gradient pb-12 pt-5 sm:pt-8 md:pt-10 lg:pt-14 overflow-hidden">
+    <section className="relative bg-hero-gradient pb-12 pt-8 sm:pt-12 md:pt-16 lg:pt-20 overflow-hidden">
       {/* FEATURED BY trust bar (optional SaaS touch, can be commented if unwanted) */}
       <div className="w-full flex justify-center py-2 mb-2">
         <span className="rounded-full bg-white/90 border border-gray-100 px-4 py-1 text-xs sm:text-sm text-coolGray shadow-sm font-semibold">
@@ -152,4 +152,3 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
-
