@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Zap, Database } from "lucide-react";
+import { RefreshCw, Zap, Database, Settings } from "lucide-react";
 import { useProductsData } from "@/hooks/useProductsData";
 import { n8nWorkflowService, type MigrationPayload, type MigrationProgress } from "@/services/N8nWorkflowService";
 import gumroadService, { type GumroadProduct } from "@/services/GumroadService";
@@ -12,6 +11,7 @@ import { MigrationOverview } from "./MigrationOverview";
 import { ProductsList } from "./ProductsList";
 import { StatusMonitor } from "./StatusMonitor";
 import { DatabaseView } from "./DatabaseView";
+import { SystemStatusCheck } from "./SystemStatusCheck";
 
 interface MigrationStatus extends MigrationProgress {
   id: string;
@@ -27,7 +27,7 @@ export const EnhancedMigrationDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isBulkMigrating, setIsBulkMigrating] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("system-check");
   const [isLoading, setIsLoading] = useState(false);
   const { products: dbProducts, refreshProducts } = useProductsData();
 
@@ -239,7 +239,7 @@ export const EnhancedMigrationDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="space-y-2">
@@ -271,12 +271,30 @@ export const EnhancedMigrationDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="system-check">
+            <Settings className="w-4 h-4 mr-2" />
+            System Check
+          </TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="products">Products ({gumroadProducts.length})</TabsTrigger>
           <TabsTrigger value="status">Live Status</TabsTrigger>
           <TabsTrigger value="database">Database ({dbProducts.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="system-check" className="space-y-6">
+          <SystemStatusCheck />
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-800 mb-2">Setup Instructions</h3>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-blue-700">
+              <li>Copy the script from <code>N8nInlinePlaywrightScript.js</code> into your n8n Playwright node</li>
+              <li>Set environment variables in n8n: PAYHIP_EMAIL and PAYHIP_PASSWORD</li>
+              <li>Enable CORS in your n8n webhook settings</li>
+              <li>Run the system check above to validate everything is working</li>
+            </ol>
+          </div>
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
           <MigrationOverview
