@@ -30,7 +30,7 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-hero-gradient pt-20 md:pt-24 lg:pt-28 pb-16">
+    <section className="relative overflow-hidden bg-hero-gradient pt-8 sm:pt-12 md:pt-16 lg:pt-20 pb-16">
       <div className="section-container">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           <div className="md:col-span-6 space-y-8 animate-fadeIn z-10">
