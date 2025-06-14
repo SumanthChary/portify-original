@@ -1,5 +1,5 @@
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle, Clock, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,13 +11,13 @@ const HeroSection = () => {
 
   const handleStartTransfer = () => {
     setLoading(true);
-    toast.loading("Preparing transfer tools...");
+    toast.loading("Preparing migration tools...");
     
     // Navigate to dashboard after brief delay
     setTimeout(() => {
       setLoading(false);
-      toast.success("Transfer tools ready!");
-      navigate("/dashboard");
+      toast.success("Migration tools ready!");
+      navigate("/enhanced-dashboard");
     }, 1000);
   };
 
@@ -38,13 +38,52 @@ const HeroSection = () => {
               <span className="tag-badge">AI-Powered Migration</span>
             </div>
             
-            <h1 className="font-bold">
-              Move Your Digital Products <span className="text-coral">Anywhere, Instantly.</span>
+            {/* Social Proof Line */}
+            <div className="flex items-center space-x-2 text-sm text-coolGray">
+              <CheckCircle className="w-4 h-4 text-lushGreen" />
+              <span className="font-medium">2,847 products successfully migrated this week</span>
+            </div>
+            
+            <h1 className="font-bold text-4xl md:text-5xl lg:text-6xl leading-tight">
+              Migrate <span className="text-coral">500+ Products</span> from Gumroad to Payhip <span className="text-coral">Without Spending 100+ Hours</span>
             </h1>
             
             <p className="text-lg md:text-xl text-coolGray leading-relaxed">
-              Easily transfer products between platforms like Gumroad, Payhip, and more with AI. No code, no hassle, no data loss.
+              Don't waste weeks manually re-creating every product title, description, image, and file. Our AI copies everything automatically - saving you 100+ hours of tedious work.
             </p>
+            
+            {/* Value Prop Bullets */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-lushGreen/10 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-lushGreen" />
+                </div>
+                <div>
+                  <p className="font-semibold text-darktext">All Data Transferred</p>
+                  <p className="text-sm text-coolGray">Automatically</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-coral/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-coral" />
+                </div>
+                <div>
+                  <p className="font-semibold text-darktext">Zero Data Loss</p>
+                  <p className="text-sm text-coolGray">Guarantee</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-mint/10 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-mint" />
+                </div>
+                <div>
+                  <p className="font-semibold text-darktext">Complete in</p>
+                  <p className="text-sm text-coolGray">Under 10 Minutes</p>
+                </div>
+              </div>
+            </div>
             
             <div className="flex flex-col sm:flex-row gap-5 pt-3">
               <Button 
@@ -53,7 +92,7 @@ const HeroSection = () => {
                 onClick={handleStartTransfer}
                 disabled={loading}
               >
-                {loading ? "Connecting..." : "Start Transfer"}
+                {loading ? "Starting Migration..." : "Migrate My Products Now"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               
@@ -62,7 +101,7 @@ const HeroSection = () => {
                 variant="outline" 
                 className="border-coral text-coral hover:bg-coral hover:text-white text-base px-8 py-6"
               >
-                Watch Demo
+                Watch 5-Minute Demo
               </Button>
             </div>
             
@@ -87,18 +126,34 @@ const HeroSection = () => {
                 ))}
               </div>
               <p className="ml-4 text-sm text-coolGray">
-                <span className="font-semibold">Trusted by 100+ creators</span> to migrate their digital products
+                <span className="font-semibold">Trusted by 500+ creators</span> who saved 100+ hours each
               </p>
             </div>
           </div>
           
           <div className="md:col-span-6 w-full h-[600px] relative z-0 flex items-center justify-center">
-            <div className="w-full max-w-md mx-auto">
+            <div className="w-full max-w-md mx-auto relative">
+              {/* Enhanced Visual with Migration Stats */}
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg px-4 py-2 border border-gray-100">
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-2 h-2 bg-lushGreen rounded-full animate-pulse"></div>
+                  <span className="font-medium text-darktext">347 products → Payhip ✅</span>
+                </div>
+              </div>
+              
               <img 
                 src="/lovable-uploads/869df871-0215-476c-83a7-3e038e4ab284.png"
-                alt="Mobile app showing product migration from Gumroad to Payhip"
+                alt="Mobile app showing automated product migration from Gumroad to Payhip"
                 className="w-full h-auto object-contain animate-float"
               />
+              
+              {/* Migration Timer Overlay */}
+              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg px-4 py-2 border border-gray-100">
+                <div className="flex items-center space-x-2 text-sm">
+                  <Clock className="w-4 h-4 text-coral" />
+                  <span className="font-medium text-darktext">Migration time: 4 minutes 23 seconds</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
