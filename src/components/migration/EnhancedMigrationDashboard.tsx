@@ -108,8 +108,7 @@ export const EnhancedMigrationDashboard = () => {
       image_url: product.image || '',
       gumroad_product_id: product.id,
       permalink: product.url,
-      product_type: 'digital',
-      file_url: ''
+      product_type: 'digital'
     };
 
     try {
@@ -164,8 +163,7 @@ export const EnhancedMigrationDashboard = () => {
       image_url: product.image || '',
       gumroad_product_id: product.id,
       permalink: product.url,
-      product_type: 'digital',
-      file_url: ''
+      product_type: 'digital'
     }));
 
     payloads.forEach(payload => {
