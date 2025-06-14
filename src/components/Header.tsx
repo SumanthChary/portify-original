@@ -28,8 +28,13 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 flex-shrink-0" onClick={closeMenu}>
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-coral to-redAccent">
-              <Zap className="h-6 w-6 text-white" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-transparent">
+              <img
+                src="/lovable-uploads/094a81bc-7698-41d3-ae82-021dcb51413b.png"
+                alt="Portify Logo"
+                className="w-10 h-10 object-contain rounded-xl"
+                style={{ background: 'transparent' }}
+              />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-coral to-redAccent bg-clip-text text-transparent">
               Portify
@@ -150,3 +155,4 @@ const Header = () => {
 };
 
 export default Header;
+
