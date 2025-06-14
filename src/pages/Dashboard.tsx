@@ -15,34 +15,37 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Check if user is authenticated with Gumroad
-    const authenticated = gumroadService.isAuthenticated();
-    setIsGumroadConnected(authenticated);
-    setIsLoading(false);
-    
-    // Check if this is a redirect from OAuth flow
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    
-    if (code) {
-      setIsLoading(true);
-      toast.loading("Connecting to Gumroad...");
-      
-      gumroadService.handleAuthCallback(code).then((success) => {
-        setIsGumroadConnected(success);
+    // Test Gumroad connection by trying to fetch products
+    const testGumroadConnection = async () => {
+      try {
+        await gumroadService.getProducts();
+        setIsGumroadConnected(true);
+      } catch (error) {
+        console.log('Gumroad connection test failed:', error);
+        setIsGumroadConnected(false);
+      } finally {
         setIsLoading(false);
-        
-        if (success) {
-          toast.success("Successfully connected to Gumroad!");
-        } else {
-          toast.error("Failed to connect to Gumroad. Please try again.");
-        }
-        
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      });
-    }
+      }
+    };
+
+    testGumroadConnection();
   }, []);
+
+  const handleTestConnection = async () => {
+    setIsLoading(true);
+    toast.loading("Testing Gumroad connection...");
+    
+    try {
+      await gumroadService.getProducts();
+      setIsGumroadConnected(true);
+      toast.success("Successfully connected to Gumroad!");
+    } catch (error) {
+      setIsGumroadConnected(false);
+      toast.error("Failed to connect to Gumroad. Please check your API configuration.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,7 +64,7 @@ const Dashboard = () => {
           <div className="section-container flex items-center justify-center min-h-[500px]">
             <div className="text-center">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-coral border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite] mb-4"></div>
-              <p className="text-lg text-coolGray">Loading...</p>
+              <p className="text-lg text-coolGray">Testing Gumroad connection...</p>
             </div>
           </div>
         ) : (
@@ -86,15 +89,22 @@ const Dashboard = () => {
                   <MigrationDashboard />
                 ) : (
                   <div className="text-center py-16">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-6">Connect Your Gumroad Account</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold mb-6">Gumroad API Connection</h1>
                     <p className="text-lg text-coolGray max-w-2xl mx-auto mb-8">
-                      To start migrating your products, you'll need to connect your Gumroad account first.
+                      To start migrating your products, we need to connect to your Gumroad account using the configured API key.
                     </p>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 max-w-lg mx-auto">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Note:</strong> The Gumroad API key is already configured in the service. 
+                        Click the button below to test the connection.
+                      </p>
+                    </div>
                     <button 
-                      onClick={() => gumroadService.startOAuthFlow()}
-                      className="bg-cta-gradient text-white px-6 py-3 rounded-md hover:opacity-90 font-medium inline-flex items-center"
+                      onClick={handleTestConnection}
+                      disabled={isLoading}
+                      className="bg-cta-gradient text-white px-6 py-3 rounded-md hover:opacity-90 font-medium inline-flex items-center disabled:opacity-50"
                     >
-                      Connect with Gumroad
+                      {isLoading ? 'Testing...' : 'Test Gumroad Connection'}
                     </button>
                   </div>
                 )}
