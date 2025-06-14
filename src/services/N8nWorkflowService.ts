@@ -79,6 +79,21 @@ class N8nWorkflowService {
     const migrationId = `migration_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     let lastError: Error | null = null;
 
+    // Validate payload before sending
+    if (!payload.user_email || !payload.product_title || !payload.gumroad_product_id) {
+      throw new Error('Missing required fields: user_email, product_title, or gumroad_product_id');
+    }
+
+    // Ensure price is a valid string number
+    const sanitizedPayload = {
+      ...payload,
+      price: payload.price ? String(payload.price) : '0',
+      description: payload.description || '',
+      image_url: payload.image_url || '',
+      permalink: payload.permalink || '',
+      product_type: payload.product_type || 'digital'
+    };
+
     // Initial progress update
     this.updateProgress(migrationId, {
       stage: 'validation',
@@ -106,7 +121,7 @@ class N8nWorkflowService {
             "X-Migration-ID": migrationId,
           },
           body: JSON.stringify({
-            ...payload,
+            ...sanitizedPayload,
             migration_id: migrationId,
             timestamp: new Date().toISOString(),
             attempt: attempt
@@ -165,7 +180,8 @@ class N8nWorkflowService {
             ...result
           };
         } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text().catch(() => 'Unknown error');
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
       } catch (error) {
         lastError = error as Error;
@@ -187,7 +203,7 @@ class N8nWorkflowService {
     this.updateProgress(migrationId, {
       stage: 'failed',
       progress: 0,
-      message: `Migration failed after ${this.maxRetries} attempts`,
+      message: `Migration failed after ${this.maxRetries} attempts: ${lastError?.message}`,
       timestamp: new Date().toISOString()
     });
 
@@ -212,10 +228,24 @@ class N8nWorkflowService {
 
     console.log(`🔄 Starting bulk migration for ${products.length} products`);
 
+    // Validate all products first
+    const validProducts = products.filter(product => {
+      if (!product.user_email || !product.product_title || !product.gumroad_product_id) {
+        console.warn('Skipping invalid product:', product);
+        failures++;
+        return false;
+      }
+      return true;
+    });
+
+    if (validProducts.length === 0) {
+      return { successes: 0, failures: products.length, results: [], migrationIds: [] };
+    }
+
     // Process in batches to avoid overwhelming the webhook
     const batchSize = 3;
-    for (let i = 0; i < products.length; i += batchSize) {
-      const batch = products.slice(i, i + batchSize);
+    for (let i = 0; i < validProducts.length; i += batchSize) {
+      const batch = validProducts.slice(i, i + batchSize);
       const batchPromises = batch.map(product => this.triggerMigration(product));
       
       const batchResults = await Promise.allSettled(batchPromises);
@@ -245,7 +275,7 @@ class N8nWorkflowService {
       });
 
       // Small delay between batches
-      if (i + batchSize < products.length) {
+      if (i + batchSize < validProducts.length) {
         await this.delay(1000);
       }
     }

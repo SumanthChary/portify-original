@@ -28,11 +28,11 @@ export const EnhancedMigrationDashboard = () => {
   const [isBulkMigrating, setIsBulkMigrating] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(false);
   const { products: dbProducts, refreshProducts } = useProductsData();
 
   useEffect(() => {
-    checkN8nConnection();
-    fetchGumroadProducts();
+    initializeDashboard();
   }, []);
 
   useEffect(() => {
@@ -42,6 +42,21 @@ export const EnhancedMigrationDashboard = () => {
       setOverallProgress(totalProgress / statuses.length);
     }
   }, [migrationStatuses]);
+
+  const initializeDashboard = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        checkN8nConnection(),
+        fetchGumroadProducts()
+      ]);
+    } catch (error) {
+      console.error('Dashboard initialization error:', error);
+      toast.error("⚠️ Dashboard initialization failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const checkN8nConnection = async () => {
     try {
@@ -67,7 +82,11 @@ export const EnhancedMigrationDashboard = () => {
       toast.success(`✅ Found ${products.length} Gumroad products`);
     } catch (error) {
       console.error("Failed to fetch Gumroad products:", error);
-      toast.error("❌ Failed to fetch Gumroad products");
+      if (error instanceof Error) {
+        toast.error(`❌ Failed to fetch Gumroad products: ${error.message}`);
+      } else {
+        toast.error("❌ Failed to fetch Gumroad products");
+      }
     }
   };
 
@@ -91,6 +110,11 @@ export const EnhancedMigrationDashboard = () => {
   const migrateProduct = async (product: GumroadProduct) => {
     const productId = product.id;
     
+    if (!isConnected) {
+      toast.error("❌ N8n connection not available");
+      return;
+    }
+
     updateMigrationStatus(productId, {
       stage: 'validation',
       progress: 5,
@@ -107,8 +131,9 @@ export const EnhancedMigrationDashboard = () => {
       price: product.price?.toString() || '0',
       image_url: product.image || '',
       gumroad_product_id: product.id,
-      permalink: product.url,
-      product_type: 'digital'
+      permalink: product.url || '',
+      product_type: 'digital',
+      file_url: product.file_url || product.download_url || ''
     };
 
     try {
@@ -132,25 +157,36 @@ export const EnhancedMigrationDashboard = () => {
           payhipUrl: result.payhip_url
         });
         toast.success(`🎉 ${product.name} migrated successfully!`);
-        refreshProducts();
+        await refreshProducts();
       } else {
         throw new Error(result.error || 'Migration failed');
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Migration failed';
       updateMigrationStatus(productId, {
         stage: 'failed',
         progress: 0,
-        message: error instanceof Error ? error.message : 'Migration failed',
+        message: errorMessage,
         endTime: new Date(),
         attempts: (migrationStatuses.get(productId)?.attempts || 0) + 1
       });
-      toast.error(`❌ Failed to migrate ${product.name}`);
+      toast.error(`❌ Failed to migrate ${product.name}: ${errorMessage}`);
     } finally {
       n8nWorkflowService.unsubscribeFromProgress(productId);
     }
   };
 
   const migrateBulk = async () => {
+    if (!isConnected) {
+      toast.error("❌ N8n connection not available");
+      return;
+    }
+
+    if (gumroadProducts.length === 0) {
+      toast.error("❌ No products to migrate");
+      return;
+    }
+
     setIsBulkMigrating(true);
     toast.info("🚀 Starting bulk migration...");
     
@@ -162,8 +198,9 @@ export const EnhancedMigrationDashboard = () => {
       price: product.price?.toString() || '0',
       image_url: product.image || '',
       gumroad_product_id: product.id,
-      permalink: product.url,
-      product_type: 'digital'
+      permalink: product.url || '',
+      product_type: 'digital',
+      file_url: product.file_url || product.download_url || ''
     }));
 
     payloads.forEach(payload => {
@@ -179,13 +216,27 @@ export const EnhancedMigrationDashboard = () => {
     try {
       const { successes, failures } = await n8nWorkflowService.triggerBulkMigration(payloads);
       toast.success(`🎯 Bulk migration completed: ${successes} successful, ${failures} failed`);
-      refreshProducts();
+      await refreshProducts();
     } catch (error) {
-      toast.error("❌ Bulk migration failed");
+      const errorMessage = error instanceof Error ? error.message : 'Bulk migration failed';
+      toast.error(`❌ Bulk migration failed: ${errorMessage}`);
     } finally {
       setIsBulkMigrating(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-coral" />
+            <p className="text-coolGray">Loading migration dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -208,8 +259,8 @@ export const EnhancedMigrationDashboard = () => {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button onClick={checkN8nConnection} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <Button onClick={checkN8nConnection} variant="outline" size="sm" disabled={isLoading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Test Connection
           </Button>
           <Badge variant={isConnected ? "default" : "destructive"} className="px-3 py-1">

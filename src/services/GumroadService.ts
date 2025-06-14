@@ -1,176 +1,118 @@
 
-/**
- * Gumroad API Service
- * This is a basic implementation for connecting to the Gumroad API.
- * In a production environment, you would want to handle authentication
- * and API calls through a backend service for security reasons.
- */
-
 export interface GumroadProduct {
   id: string;
   name: string;
+  description?: string;
   price: number;
-  description: string;
-  url: string;
   image?: string;
-  // Add other product fields as needed
+  url: string;
+  download_url?: string;
+  file_url?: string;
+  created_at?: string;
+  updated_at?: string;
+  product_type?: string;
+  custom_permalink?: string;
 }
 
-export class GumroadService {
-  private apiKey: string | null = null;
-  private appId = "CAhiRwpTAZBDnjZoDCRe-uawd7Okkloe4WSxqc-0ABw";
-  private appSecret = "_--WNQRuGaGw5uNRkg8RJuiD23ITgjL6hAOA50aXw9g";
-  private redirectUri = "https://portify-original.lovable.app";
-  private accessToken: string | null = null;
-  
-  constructor() {
-    // Check if we have a stored access token in localStorage
-    const storedToken = localStorage.getItem('gumroad_access_token');
-    if (storedToken) {
-      this.accessToken = storedToken;
-      console.log("Loaded Gumroad access token from storage");
-    }
-  }
-  
-  /**
-   * Get the OAuth authorization URL
-   */
-  public getAuthUrl(): string {
-    return `https://gumroad.com/oauth/authorize?client_id=${this.appId}&redirect_uri=${encodeURIComponent(this.redirectUri)}&scope=view_profile`;
-  }
-  
-  /**
-   * Handle the OAuth callback and exchange code for token
-   */
-  public async handleAuthCallback(code: string): Promise<boolean> {
+class GumroadService {
+  private readonly apiKey = "1_hFYYKL2sfvDhXZtxF81xcgbwmSTTepvXo8anbdSO8";
+  private readonly baseUrl = "https://api.gumroad.com/v2";
+
+  async getProducts(): Promise<GumroadProduct[]> {
     try {
-      // In a real implementation, this would be done on the server side
-      // For security reasons, the app secret should never be exposed to the client
-      console.log("Exchanging code for token...");
+      const response = await fetch(`${this.baseUrl}/products`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Invalid Gumroad API key. Please check your credentials.');
+        }
+        if (response.status === 429) {
+          throw new Error('Gumroad API rate limit exceeded. Please try again later.');
+        }
+        throw new Error(`Gumroad API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
       
-      // Simulating successful token exchange
-      this.accessToken = "1_hFYYKL2sfvDhXZtxF81xcgbwmSTTepvXo8anbdSO8";
-      localStorage.setItem('gumroad_access_token', this.accessToken);
+      if (!data.success) {
+        throw new Error(`Gumroad API returned error: ${data.message || 'Unknown error'}`);
+      }
+
+      // Handle both single product and products array
+      const products = Array.isArray(data.products) ? data.products : [data.products].filter(Boolean);
       
-      return true;
+      return products.map((product: any) => ({
+        id: product.id,
+        name: product.name || product.title || 'Untitled Product',
+        description: product.description || '',
+        price: parseFloat(product.price) || 0,
+        image: product.preview_url || product.image_url || product.image || '',
+        url: product.short_url || product.url || '',
+        download_url: product.file_url || product.download_url || '',
+        file_url: product.file_url || product.download_url || '',
+        created_at: product.created_at || new Date().toISOString(),
+        updated_at: product.updated_at || new Date().toISOString(),
+        product_type: product.product_type || 'digital',
+        custom_permalink: product.custom_permalink || product.slug || ''
+      }));
     } catch (error) {
-      console.error("Failed to exchange code for token", error);
-      return false;
+      console.error('Error fetching Gumroad products:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch products from Gumroad API');
     }
   }
-  
-  /**
-   * Get the access token (for sending to n8n webhook)
-   */
-  public getAccessToken(): string | null {
-    return this.accessToken;
-  }
-  
-  /**
-   * Set the API key for Gumroad authentication
-   */
-  public setApiKey(apiKey: string): void {
-    this.apiKey = apiKey;
-    console.log("Gumroad API key set");
-  }
-  
-  /**
-   * Check if the API key is set
-   */
-  public isAuthenticated(): boolean {
-    return !!this.accessToken || !!this.apiKey;
-  }
-  
-  /**
-   * Get products from Gumroad
-   * In a real implementation, this would make an actual API call
-   */
-  public async getProducts(): Promise<GumroadProduct[]> {
-    if (!this.isAuthenticated()) {
-      throw new Error("Gumroad API key or access token not set. Please authenticate first.");
+
+  async getProduct(productId: string): Promise<GumroadProduct | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/products/${productId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to fetch product: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success || !data.product) {
+        return null;
+      }
+
+      const product = data.product;
+      return {
+        id: product.id,
+        name: product.name || product.title || 'Untitled Product',
+        description: product.description || '',
+        price: parseFloat(product.price) || 0,
+        image: product.preview_url || product.image_url || product.image || '',
+        url: product.short_url || product.url || '',
+        download_url: product.file_url || product.download_url || '',
+        file_url: product.file_url || product.download_url || '',
+        created_at: product.created_at || new Date().toISOString(),
+        updated_at: product.updated_at || new Date().toISOString(),
+        product_type: product.product_type || 'digital',
+        custom_permalink: product.custom_permalink || product.slug || ''
+      };
+    } catch (error) {
+      console.error('Error fetching Gumroad product:', error);
+      return null;
     }
-    
-    // This is a mock implementation that would be replaced with an actual API call
-    // For example: return fetch('https://api.gumroad.com/v2/products', { headers: { 'Authorization': `Bearer ${this.accessToken}` } })
-    console.log("Fetching products from Gumroad API...");
-    
-    // Simulate API response
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: "prod_1",
-            name: "Digital Marketing Guide",
-            price: 19.99,
-            description: "Complete guide to digital marketing strategies",
-            url: "https://gumroad.com/l/digital-marketing",
-            image: "https://picsum.photos/seed/dm1/600/400"
-          },
-          {
-            id: "prod_2",
-            name: "UI Design Templates",
-            price: 29.99,
-            description: "Premium Figma UI kit for modern web design",
-            url: "https://gumroad.com/l/ui-templates",
-            image: "https://picsum.photos/seed/ui2/600/400"
-          },
-          {
-            id: "prod_3",
-            name: "JavaScript Course",
-            price: 59.99,
-            description: "Advanced JavaScript techniques and patterns",
-            url: "https://gumroad.com/l/js-course",
-            image: "https://picsum.photos/seed/js3/600/400"
-          },
-          {
-            id: "prod_4",
-            name: "SEO Mastery Bundle",
-            price: 45.00,
-            description: "Complete SEO toolkit to rank higher on Google",
-            url: "https://gumroad.com/l/seo-mastery",
-            image: "https://picsum.photos/seed/seo4/600/400"
-          },
-          {
-            id: "prod_5",
-            name: "Social Media Marketing Templates",
-            price: 24.99,
-            description: "Ready-to-use templates for Instagram, Facebook, and Twitter",
-            url: "https://gumroad.com/l/social-templates",
-            image: "https://picsum.photos/seed/sm5/600/400"
-          }
-        ]);
-      }, 1000);
-    });
-  }
-  
-  /**
-   * Migrate a product to another platform
-   * This is a placeholder for the actual migration functionality
-   */
-  public async migrateProduct(productId: string, targetPlatform: string): Promise<boolean> {
-    if (!this.isAuthenticated()) {
-      throw new Error("Gumroad API key or access token not set. Please authenticate first.");
-    }
-    
-    console.log(`Migrating product ${productId} to ${targetPlatform}...`);
-    
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 2000);
-    });
-  }
-  
-  /**
-   * Initialize OAuth flow
-   */
-  public startOAuthFlow(): void {
-    window.location.href = this.getAuthUrl();
   }
 }
 
-// Create a singleton instance
-export const gumroadService = new GumroadService();
-
-export default gumroadService;
+export default new GumroadService();
