@@ -1,0 +1,42 @@
+{
+  "name": "n8n-nodes-payhip",
+  "version": "1.0.0",
+  "description": "n8n node for Payhip automation using Playwright",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "format": "prettier src/**/*.ts --write",
+    "lint": "eslint src/**/*.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "payhip",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@playwright/test": "^1.39.0",
+    "n8n-core": "^1.0.0",
+    "n8n-workflow": "^1.0.0",
+    "playwright": "^1.39.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.10",
+    "typescript": "~4.8.4",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
+    "@types/express": "^4.17.13"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/PayhipApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Payhip/Payhip.node.js"
+    ]
+  }
+}
