@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 export interface MigrationPayload {
@@ -32,7 +31,7 @@ export interface MigrationProgress {
 }
 
 class N8nWorkflowService {
-  private readonly webhookUrl = "https://portify-beta.app.n8n.cloud/webhook/migrate-gumroad";
+  private readonly webhookUrl = "https://portify-o1.app.n8n.cloud/webhook/migrate-gumroad";
   private readonly maxRetries = 3;
   private readonly retryDelay = 2000;
   private progressCallbacks: Map<string, (progress: MigrationProgress) => void> = new Map();

@@ -1,8 +1,7 @@
-
 import { toast } from "sonner";
 
 export class ConnectionTestService {
-  private readonly webhookUrl = "https://portify-beta.app.n8n.cloud/webhook/migrate-gumroad";
+  private readonly webhookUrl = "https://portify-o1.app.n8n.cloud/webhook/migrate-gumroad";
 
   async testFullPipeline(): Promise<boolean> {
     try {
