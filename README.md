@@ -6,34 +6,35 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![N8n](https://img.shields.io/badge/N8n-Workflows-orange.svg)](https://n8n.io/)
 
-> **Automate your digital product migrations between e-commerce platforms with zero manual effort.**
+> **Automate your digital product migrations between any e-commerce platforms with zero manual effort.**
 
-Portify is an open-source platform that empowers digital creators to migrate their products seamlessly between different e-commerce platforms. Built with modern web technologies and powered by N8n workflows, it eliminates the tedious manual work of product migration.
+Portify is an open-source platform that empowers digital creators to migrate their products seamlessly between different e-commerce platforms. Built with modern web technologies and powered by N8n workflows, it eliminates the tedious manual work of product migration across any platform combination.
 
 ## ✨ Features
 
-### 🔄 **Automated Migration**
-- **One-Click Migration**: Migrate entire product catalogs in minutes
+### 🔄 **Universal Migration Engine**
+- **One-Click Migration**: Migrate entire product catalogs between any supported platforms in minutes
 - **Real-time Progress**: Live updates and detailed migration logs
 - **Error Recovery**: Automatic retry mechanisms for failed transfers
-- **Batch Processing**: Handle hundreds of products simultaneously
+- **Batch Processing**: Handle hundreds of products simultaneously across platforms
 
-### 🎯 **Platform Support**
-- **Gumroad → Payhip**: Fully supported with complete metadata transfer
-- **Coming Soon**: Etsy, Shopify, WooCommerce, and more
-- **Extensible**: Plugin architecture for custom platform integrations
+### 🎯 **Multi-Platform Support**
+- **Currently Supported**: Gumroad, Payhip, Etsy, Shopify (Beta)
+- **Coming Soon**: WooCommerce, BigCommerce, Square, Stripe, and 15+ more platforms
+- **Extensible Architecture**: Plugin system for custom platform integrations
+- **Universal API**: Works with any platform that has REST/GraphQL APIs
 
 ### 🛡️ **Enterprise-Grade Reliability**
-- **99.9% Success Rate**: Robust error handling and validation
-- **Secure**: OAuth integrations and encrypted data handling
+- **99.9% Success Rate**: Robust error handling and validation across all platforms
+- **Secure**: OAuth integrations and encrypted data handling for all platforms
 - **Scalable**: Handles high-volume migrations without performance loss
-- **Auditable**: Comprehensive logging and migration history
+- **Cross-Platform Auditable**: Comprehensive logging and migration history
 
 ### 🎨 **Modern User Experience**
-- **Intuitive Dashboard**: Clean, responsive interface built with React + Tailwind
-- **Real-time Notifications**: Stay informed throughout the migration process
-- **Product Preview**: Verify migrations before committing changes
-- **Mobile Responsive**: Access from any device
+- **Platform-Agnostic Dashboard**: Clean interface supporting any source-to-target migration
+- **Real-time Notifications**: Stay informed throughout any migration process
+- **Universal Product Preview**: Verify migrations before committing changes to any platform
+- **Mobile Responsive**: Access from any device for any platform migration
 
 ## 🚀 Quick Start
 
@@ -41,6 +42,7 @@ Portify is an open-source platform that empowers digital creators to migrate the
 - Node.js 18+ and npm
 - Supabase account (free tier works)
 - N8n account (free tier available)
+- API credentials for your source and target platforms
 
 ### Installation
 
@@ -58,7 +60,7 @@ Portify is an open-source platform that empowers digital creators to migrate the
 3. **Set up environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env with your Supabase credentials
+   # Edit .env with your platform credentials and Supabase config
    ```
 
 4. **Start the development server**
@@ -72,22 +74,24 @@ Portify is an open-source platform that empowers digital creators to migrate the
 ### N8n Workflow Setup
 
 1. **Create N8n Account**: Sign up at [n8n.io](https://n8n.io)
-2. **Import Workflow**: Use the provided workflow template in `/automation/`
-3. **Configure Webhook**: Copy your webhook URL to the dashboard
-4. **Set Credentials**: Add your platform credentials in N8n
-5. **Activate**: Enable the workflow and start migrating!
+2. **Import Universal Workflow**: Use the provided workflow template in `/automation/`
+3. **Configure Platform Webhooks**: Copy your webhook URLs to the dashboard
+4. **Set Platform Credentials**: Add your source and target platform credentials in N8n
+5. **Activate**: Enable the workflow and start migrating between any platforms!
 
-## 🏗️ Architecture
+## 🏗️ Universal Architecture
 
 ```mermaid
 graph TB
     A[React Frontend] --> B[Supabase Auth]
     A --> C[Supabase Database]
-    A --> D[N8n Webhook]
-    D --> E[Gumroad API]
-    D --> F[Playwright Automation]
-    F --> G[Payhip Platform]
-    D --> H[Email Notifications]
+    A --> D[N8n Universal Webhook]
+    D --> E[Platform A API]
+    D --> F[Platform B API]
+    D --> G[Platform C API]
+    D --> H[Playwright Universal Automation]
+    H --> I[Any Target Platform]
+    D --> J[Email Notifications]
     D --> C
 ```
 
@@ -101,8 +105,8 @@ graph TB
 
 **Backend**
 - Supabase for auth & database
-- N8n for workflow automation
-- Playwright for browser automation
+- N8n for universal workflow automation
+- Playwright for cross-platform browser automation
 - PostgreSQL for data persistence
 
 **Infrastructure**
@@ -112,82 +116,69 @@ graph TB
 
 ## 📊 Usage Examples
 
-### Basic Migration
+### Universal Migration
 ```typescript
-// Trigger migration via webhook
-const response = await fetch('/webhook/migrate-gumroad', {
+// Trigger migration between any platforms via webhook
+const response = await fetch('/webhook/migrate-universal', {
   method: 'POST',
   body: JSON.stringify({
     user_email: 'creator@example.com',
-    gumroad_token: 'your-token',
-    target_platform: 'payhip'
+    source_platform: 'gumroad',
+    target_platform: 'payhip',
+    source_token: 'source-api-token',
+    target_credentials: { email: 'user@email.com', password: 'pass' }
   })
 });
 ```
 
-### Monitor Progress
+### Monitor Any Platform Migration
 ```typescript
-// Real-time migration status
+// Real-time migration status for any platform combination
 const { data: migrations } = useQuery({
-  queryKey: ['migrations', userId],
-  queryFn: () => getMigrationStatus(userId),
+  queryKey: ['migrations', userId, sourcePlatform, targetPlatform],
+  queryFn: () => getMigrationStatus(userId, sourcePlatform, targetPlatform),
   refetchInterval: 2000
 });
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions from developers of all skill levels! Here's how to get started:
+We welcome contributions from developers of all skill levels! Help us support more platforms and improve the migration experience.
 
-### Development Setup
+### Platform Integration Areas
 
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes**
-4. **Add tests** (if applicable)
-5. **Commit with conventional commits**
-   ```bash
-   git commit -m "feat: add amazing feature"
-   ```
-6. **Push and create PR**
-
-### Contribution Areas
-
-- 🔌 **Platform Integrations**: Add support for new e-commerce platforms
-- 🎨 **UI/UX Improvements**: Enhance the user interface and experience
-- 🚀 **Performance**: Optimize migration speed and reliability
-- 📚 **Documentation**: Improve guides, tutorials, and API docs
-- 🧪 **Testing**: Add comprehensive test coverage
+- 🔌 **New Platform Integrations**: Add support for Etsy, WooCommerce, BigCommerce, etc.
+- 🎨 **UI/UX Improvements**: Enhance the universal migration interface
+- 🚀 **Performance**: Optimize migration speed across all platforms
+- 📚 **Documentation**: Improve platform-specific guides and tutorials
+- 🧪 **Testing**: Add comprehensive test coverage for all platforms
 - 🌐 **Internationalization**: Add multi-language support
 
-## 📈 Roadmap
+## 📈 Platform Roadmap
 
 ### Q1 2024
-- [ ] Shopify integration
-- [ ] Etsy marketplace support
-- [ ] Advanced filtering and search
-- [ ] Migration scheduling
+- [ ] WooCommerce integration
+- [ ] BigCommerce integration
+- [ ] Etsy marketplace advanced support
+- [ ] Universal migration scheduling
 
 ### Q2 2024
-- [ ] WooCommerce integration
-- [ ] Bulk editing capabilities
-- [ ] Advanced analytics dashboard
+- [ ] Square integration
+- [ ] Stripe integration
+- [ ] Advanced cross-platform analytics
 - [ ] Mobile app (React Native)
 
 ### Q3 2024
-- [ ] Plugin marketplace
-- [ ] Enterprise features
+- [ ] Plugin marketplace for custom platforms
+- [ ] Enterprise multi-platform features
 - [ ] Advanced automation rules
-- [ ] Multi-tenant support
+- [ ] Multi-tenant platform support
 
 ## 🏆 Recognition & Awards
 
 - 🌟 **Open Source Innovation Award 2024** (Pending)
-- 🚀 **Best Developer Tool** - Creator Economy Awards
-- 💡 **Most Promising Startup** - Tech Innovators Summit
+- 🚀 **Best Cross-Platform Tool** - Creator Economy Awards
+- 💡 **Most Promising Migration Platform** - Tech Innovators Summit
 
 ## 📄 License
 
@@ -197,7 +188,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **N8n Team** for the incredible workflow automation platform
 - **Supabase Team** for the amazing backend-as-a-service
-- **Playwright Team** for reliable browser automation
+- **Playwright Team** for reliable cross-platform browser automation
 - **Open Source Community** for inspiration and contributions
 
 ## 📞 Support & Contact
