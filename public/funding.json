@@ -10,7 +10,7 @@
     "webpageUrl": "https://portify-original.lovable.app"
   },
   "funding": {
-    "type": "grant", 
+    "type": "grant",
     "amount_requested": "$35,000 USD",
     "currency": "USD",
     "funding_goals": [
@@ -54,7 +54,7 @@
     "targets": {
       "github_stars": 3000,
       "migration_success_rate": "99.5%",
-      "average_migration_time": "3 minutes", 
+      "average_migration_time": "3 minutes",
       "platforms_supported": 25,
       "active_users": 10000
     }
@@ -70,7 +70,7 @@
       ]
     },
     {
-      "phase": "Q2 2025", 
+      "phase": "Q2 2025",
       "deliverables": [
         "Plugin marketplace with community contributions",
         "Advanced analytics and migration insights dashboard",
@@ -82,7 +82,7 @@
       "phase": "Q3 2025",
       "deliverables": [
         "25+ platform support including emerging marketplaces",
-        "Global community platform with mentorship programs", 
+        "Global community platform with mentorship programs",
         "AI-powered SEO optimization during migration",
         "White-label solutions for platform providers"
       ]
