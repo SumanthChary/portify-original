@@ -6,6 +6,9 @@
   "category": "Developer Tools",
   "subcategory": "E-commerce Automation",
   "license": "MIT",
+  "entity": {
+    "webpageUrl": "https://portify-original.lovable.app"
+  },
   "funding": {
     "type": "grant",
     "amount_requested": "$35,000 USD",
