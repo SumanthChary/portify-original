@@ -22,8 +22,8 @@
       "wellKnown": ""
     },
     "repositoryUrl": {
-      "url": "https://github.com/portify-dev/portify",
-      "wellKnown": "https://github.com/portify-dev/portify/blob/main/.well-known/funding-manifest-urls"
+      "url": "https://github.com/SumanthChary/portify-original",
+      "wellKnown": "https://github.com/SumanthChary/portify-original/blob/main/.well-known/funding-manifest-urls"
     },
     "licenses": ["spdx:MIT"],
     "tags": ["e-commerce", "automation", "migration", "developer-tools", "platform-integration", "creator-economy", "open-source", "javascript", "react", "typescript"]
