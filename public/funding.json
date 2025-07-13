@@ -4,10 +4,10 @@
   "entity": {
     "type": "individual",
     "role": "maintainer",
-    "name": "Portify Development Team",
-    "email": "funding@portify.dev",
+    "name": "Sumanth Chary",
+    "email": "sumanthchary.startup@gmail.com",
     "phone": "",
-    "description": "We're an open-source development team creating Portify - a universal product migration platform that helps digital creators migrate their products between any e-commerce platforms with 99% success rate. Our mission is to eliminate vendor lock-in and empower creators with platform freedom.",
+    "description": "I'm an independent developer creating Portify - a universal product migration platform that helps digital creators migrate their products between any e-commerce platforms with 99% success rate. My mission is to eliminate vendor lock-in and empower creators with platform freedom.",
     "webpageUrl": {
       "url": "https://portify-original.lovable.app",
       "wellKnown": ""
@@ -37,7 +37,7 @@
     }, {
       "guid": "paypal-donations",
       "type": "payment-provider",
-      "address": "funding@portify.dev",
+      "address": "sumanthchary.startup@gmail.com",
       "description": "PayPal for smaller donations and community support."
     }],
     "plans": [{
