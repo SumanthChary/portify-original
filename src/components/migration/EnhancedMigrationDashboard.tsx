@@ -12,6 +12,7 @@ import { ProductsList } from "./ProductsList";
 import { StatusMonitor } from "./StatusMonitor";
 import { DatabaseView } from "./DatabaseView";
 import { SystemStatusCheck } from "./SystemStatusCheck";
+import { MultiPlatformLogin } from "@/components/auth/MultiPlatformLogin";
 
 interface MigrationStatus extends MigrationProgress {
   id: string;
@@ -29,6 +30,8 @@ export const EnhancedMigrationDashboard = () => {
   const [overallProgress, setOverallProgress] = useState(0);
   const [activeTab, setActiveTab] = useState("system-check");
   const [isLoading, setIsLoading] = useState(false);
+  const [authComplete, setAuthComplete] = useState(false);
+  const [authCredentials, setAuthCredentials] = useState<any>(null);
   const { products: dbProducts, refreshProducts } = useProductsData();
 
   useEffect(() => {
@@ -284,7 +287,7 @@ export const EnhancedMigrationDashboard = () => {
 
         <TabsContent value="system-check" className="space-y-6">
           <SystemStatusCheck />
-          
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="font-semibold text-blue-800 mb-2">Setup Instructions</h3>
             <ol className="list-decimal list-inside space-y-1 text-sm text-blue-700">
@@ -294,28 +297,58 @@ export const EnhancedMigrationDashboard = () => {
               <li>Run the system check above to validate everything is working</li>
             </ol>
           </div>
+
+          {/* Mandatory multi-platform authentication */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Authenticate Platforms (Mandatory)</h3>
+              <Badge variant={authComplete ? "default" : "secondary"}>
+                {authComplete ? '✅ All Platforms Connected' : 'Please connect all platforms'}
+              </Badge>
+            </div>
+            <MultiPlatformLogin
+              requiredPlatforms={{ source: 'Gumroad', destination: 'Payhip' }}
+              onAuthComplete={(creds) => {
+                setAuthCredentials(creds);
+                setAuthComplete(true);
+                toast.success('All platforms authenticated. You can start migrating.');
+              }}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
-          <MigrationOverview
-            gumroadProducts={gumroadProducts}
-            migrationStatuses={migrationStatuses}
-            isBulkMigrating={isBulkMigrating}
-            overallProgress={overallProgress}
-            isConnected={isConnected}
-            onMigrateBulk={migrateBulk}
-            onRefreshProducts={fetchGumroadProducts}
-            onRefreshDatabase={refreshProducts}
-          />
+          {authComplete ? (
+            <MigrationOverview
+              gumroadProducts={gumroadProducts}
+              migrationStatuses={migrationStatuses}
+              isBulkMigrating={isBulkMigrating}
+              overallProgress={overallProgress}
+              isConnected={isConnected}
+              onMigrateBulk={migrateBulk}
+              onRefreshProducts={fetchGumroadProducts}
+              onRefreshDatabase={refreshProducts}
+            />
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800 font-medium">Please complete platform authentication in the System Check tab to enable migrations.</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="products">
-          <ProductsList
-            gumroadProducts={gumroadProducts}
-            migrationStatuses={migrationStatuses}
-            isConnected={isConnected}
-            onMigrateProduct={migrateProduct}
-          />
+          {authComplete ? (
+            <ProductsList
+              gumroadProducts={gumroadProducts}
+              migrationStatuses={migrationStatuses}
+              isConnected={isConnected}
+              onMigrateProduct={migrateProduct}
+            />
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800 font-medium">Authenticate platforms first to view and migrate products.</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="status">

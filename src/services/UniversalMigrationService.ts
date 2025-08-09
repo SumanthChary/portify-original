@@ -55,7 +55,7 @@ export interface MigrationPayload {
 }
 
 class UniversalMigrationService {
-  private readonly webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://portify-o1.app.n8n.cloud/webhook/universal-migrate';
+  private readonly webhookUrl = 'https://portify-o1.app.n8n.cloud/webhook/universal-migrate';
 
   async createMigrationSession(
     sourcePlatform: string, 
@@ -285,7 +285,7 @@ class UniversalMigrationService {
       sourcePlatform: data.source_platform,
       destinationPlatform: data.destination_platform,
       credentials: this.decryptCredentials(data.credentials),
-      status: data.status,
+      status: data.status as MigrationSession['status'],
       createdAt: data.created_at,
       completedAt: data.completed_at
     };

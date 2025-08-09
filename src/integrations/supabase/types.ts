@@ -10,10 +10,87 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      migration_results: {
+        Row: {
+          completed_at: string
+          destination_platform: string
+          id: string
+          results: Json
+          session_id: string
+          source_platform: string
+          summary: Json
+        }
+        Insert: {
+          completed_at?: string
+          destination_platform: string
+          id?: string
+          results: Json
+          session_id: string
+          source_platform: string
+          summary: Json
+        }
+        Update: {
+          completed_at?: string
+          destination_platform?: string
+          id?: string
+          results?: Json
+          session_id?: string
+          source_platform?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "migration_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "migration_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      migration_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          credentials: string
+          destination_platform: string
+          id: string
+          session_id: string
+          source_platform: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          credentials: string
+          destination_platform: string
+          id?: string
+          session_id: string
+          source_platform: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          credentials?: string
+          destination_platform?: string
+          id?: string
+          session_id?: string
+          source_platform?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       migrations: {
         Row: {
           created_at: string
@@ -58,6 +135,110 @@ export type Database = {
           user_email?: string
         }
         Relationships: []
+      }
+      platform_credentials: {
+        Row: {
+          connection_type: string
+          created_at: string
+          encrypted_credentials: string
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          platform: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connection_type: string
+          created_at?: string
+          encrypted_credentials: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          platform: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connection_type?: string
+          created_at?: string
+          encrypted_credentials?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      universal_products: {
+        Row: {
+          category: string | null
+          description: string | null
+          destination_product_id: string | null
+          extracted_at: string
+          files: Json | null
+          id: string
+          images: Json | null
+          migrated_at: string | null
+          migration_status: string | null
+          price: number | null
+          session_id: string
+          source_platform: string
+          source_product_id: string
+          status: string
+          tags: string[] | null
+          title: string
+          variants: Json | null
+        }
+        Insert: {
+          category?: string | null
+          description?: string | null
+          destination_product_id?: string | null
+          extracted_at?: string
+          files?: Json | null
+          id?: string
+          images?: Json | null
+          migrated_at?: string | null
+          migration_status?: string | null
+          price?: number | null
+          session_id: string
+          source_platform: string
+          source_product_id: string
+          status?: string
+          tags?: string[] | null
+          title: string
+          variants?: Json | null
+        }
+        Update: {
+          category?: string | null
+          description?: string | null
+          destination_product_id?: string | null
+          extracted_at?: string
+          files?: Json | null
+          id?: string
+          images?: Json | null
+          migrated_at?: string | null
+          migration_status?: string | null
+          price?: number | null
+          session_id?: string
+          source_platform?: string
+          source_product_id?: string
+          status?: string
+          tags?: string[] | null
+          title?: string
+          variants?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "universal_products_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "migration_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
       }
     }
     Views: {
