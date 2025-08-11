@@ -15,6 +15,10 @@ import GumroadWebhookTest from "./pages/GumroadWebhookTest";
 import AutomationAgent from "./pages/AutomationAgent";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Extract from "./pages/Extract";
+import SelectProducts from "./pages/SelectProducts";
+import Payment from "./pages/Payment";
+import LiveAutomation from "./pages/LiveAutomation";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -37,6 +41,10 @@ const App = () => (
             <Route path="/gumroad-webhook-test" element={<GumroadWebhookTest />} />
             <Route path="/automation-agent" element={<AutomationAgent />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/extract" element={<Extract />} />
+            <Route path="/select-products" element={<SelectProducts />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/live-automation" element={<LiveAutomation />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

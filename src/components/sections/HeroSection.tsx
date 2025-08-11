@@ -11,13 +11,13 @@ const HeroSection = () => {
 
   const handleStartTransfer = () => {
     setLoading(true);
-    toast.loading("Preparing transfer tools...");
+    toast.loading("Preparing migration tools...");
     
-    // Navigate to dashboard after brief delay
+    // Navigate to extraction page after brief delay
     setTimeout(() => {
       setLoading(false);
-      toast.success("Transfer tools ready!");
-      navigate("/dashboard");
+      toast.success("Migration tools ready!");
+      navigate("/extract");
     }, 1000);
   };
 
