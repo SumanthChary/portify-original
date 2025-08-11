@@ -13,6 +13,7 @@ import { StatusMonitor } from "./StatusMonitor";
 import { DatabaseView } from "./DatabaseView";
 import { SystemStatusCheck } from "./SystemStatusCheck";
 import { MultiPlatformLogin } from "@/components/auth/MultiPlatformLogin";
+import { SmartMigrationInterface } from "./SmartMigrationInterface";
 
 interface MigrationStatus extends MigrationProgress {
   id: string;
@@ -285,7 +286,8 @@ export const EnhancedMigrationDashboard = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="smart">Smart Migration</TabsTrigger>
           <TabsTrigger value="system-check">
             <Settings className="w-4 h-4 mr-2" />
             System Check
@@ -295,6 +297,10 @@ export const EnhancedMigrationDashboard = () => {
           <TabsTrigger value="status">Live Status</TabsTrigger>
           <TabsTrigger value="database">Database ({dbProducts.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="smart">
+          <SmartMigrationInterface />
+        </TabsContent>
 
         <TabsContent value="system-check" className="space-y-6">
           <SystemStatusCheck />
