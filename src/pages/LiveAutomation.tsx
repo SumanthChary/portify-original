@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   Play, 
@@ -20,6 +22,7 @@ import {
   Download
 } from "lucide-react";
 import Header from "@/components/Header";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AutomationStep {
   id: string;
@@ -32,6 +35,7 @@ interface AutomationStep {
 
 const LiveAutomation = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [migrationData, setMigrationData] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -41,11 +45,16 @@ const LiveAutomation = () => {
   const [browserActions, setBrowserActions] = useState<string[]>([]);
   const [completedProducts, setCompletedProducts] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [destinationCredentials, setDestinationCredentials] = useState({
+    email: '',
+    password: ''
+  });
+  const [showCredentials, setShowCredentials] = useState(true);
   const logsRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('processedMigration');
+    const stored = localStorage.getItem('migrationData');
     if (!stored) {
       toast.error("No migration data found. Please start over.");
       navigate('/extract');
@@ -54,12 +63,48 @@ const LiveAutomation = () => {
     const data = JSON.parse(stored);
     setMigrationData(data);
     
+    // Check if payment was successful from URL params
+    const paymentSuccess = searchParams.get('payment_success');
+    if (paymentSuccess === 'true') {
+      toast.success('Payment successful! Ready to start migration.');
+      setShowCredentials(true);
+    }
+    
     // Initialize steps based on platform type
     initializeSteps(data);
     
-    // Auto-start migration
-    setTimeout(() => startMigration(data), 1000);
-  }, [navigate]);
+    // Set up real-time updates
+    if (data.sessionId) {
+      setupRealtimeUpdates(data.sessionId);
+    }
+  }, [navigate, searchParams]);
+
+  const setupRealtimeUpdates = (sessionId: string) => {
+    const channel = supabase.channel(`migration-${sessionId}`);
+    
+    channel.on('broadcast', { event: 'migration_progress' }, (payload) => {
+      const { productId, status, progress: productProgress } = payload.payload;
+      
+      if (productProgress !== undefined) {
+        setProgress(productProgress);
+      }
+      
+      // Update step status
+      setSteps(prev => prev.map(step => 
+        step.id === `product-${productId}` 
+          ? { ...step, status: status === 'migrated' ? 'completed' : 'running' }
+          : step
+      ));
+      
+      addLog(`Product ${productId} ${status}`);
+    });
+    
+    channel.subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const initializeSteps = (data: any) => {
     const baseSteps = [
@@ -101,124 +146,63 @@ const LiveAutomation = () => {
     ));
   };
 
-  const startMigration = async (data: any) => {
+  const startMigration = async () => {
+    if (!migrationData?.sessionId) {
+      toast.error('Invalid session. Please start over.');
+      return;
+    }
+
+    if (!destinationCredentials.email || !destinationCredentials.password) {
+      toast.error('Please enter your destination platform credentials');
+      return;
+    }
+    
     setIsRunning(true);
-    addLog("🚀 Starting migration automation...");
-    
-    // Step 1: Initialize Browser
+    setProgress(0);
     setCurrentStep(0);
-    updateStep(0, 'running', 'Launching Playwright browser...');
-    addBrowserAction("🌐 Launching headless Chrome browser");
-    await simulateDelay(1500);
-    addBrowserAction("🔧 Configuring browser with stealth settings");
-    await simulateDelay(1000);
-    updateStep(0, 'completed', 'Browser initialized successfully');
-    addLog("✅ Browser ready for automation");
-    setProgress(16);
-
-    if (isPaused) return;
-
-    // Step 2: Connect to Source Platform
-    setCurrentStep(1);
-    updateStep(1, 'running', `Navigating to ${data.platform}...`);
-    addBrowserAction(`🔗 Navigating to ${data.platform}.com`);
-    await simulateDelay(2000);
-    addBrowserAction("🔍 Detecting login form elements");
-    await simulateDelay(1000);
-    addBrowserAction("⌨️ Entering credentials securely");
-    await simulateDelay(2000);
-    addBrowserAction("🖱️ Clicking login button");
-    await simulateDelay(1500);
-    addBrowserAction("✅ Successfully logged in");
-    updateStep(1, 'completed', `Connected to ${data.platform}`);
-    addLog(`✅ Authenticated with ${data.platform}`);
-    setProgress(33);
-
-    if (isPaused) return;
-
-    // Step 3: Extract Product Data
-    setCurrentStep(2);
-    updateStep(2, 'running', 'Extracting product information...');
-    addBrowserAction("📦 Navigating to products page");
-    await simulateDelay(1000);
+    setShowCredentials(false);
     
-    for (let i = 0; i < data.selectedProducts.length; i++) {
-      if (isPaused) return;
-      
-      const product = data.selectedProducts[i];
-      addBrowserAction(`📋 Extracting data for: ${product.name}`);
-      await simulateDelay(1500);
-      addBrowserAction(`💾 Captured product details, images, and files`);
-      await simulateDelay(500);
-      
-      const productProgress = ((i + 1) / data.selectedProducts.length) * 16;
-      setProgress(33 + productProgress);
-    }
+    addLog('🚀 Starting real migration process...');
     
-    updateStep(2, 'completed', `Extracted ${data.selectedProducts.length} products`);
-    addLog(`✅ Product extraction completed`);
-    setProgress(50);
-
-    if (isPaused) return;
-
-    // Step 4: Connect to Destination Platform
-    setCurrentStep(3);
-    updateStep(3, 'running', `Connecting to ${data.destinationPlatform}...`);
-    addBrowserAction(`🔗 Opening new tab for ${data.destinationPlatform}`);
-    await simulateDelay(2000);
-    addBrowserAction("🔐 Entering destination platform credentials");
-    await simulateDelay(2000);
-    addBrowserAction("✅ Successfully authenticated");
-    updateStep(3, 'completed', `Connected to ${data.destinationPlatform}`);
-    addLog(`✅ Ready to migrate to ${data.destinationPlatform}`);
-    setProgress(66);
-
-    if (isPaused) return;
-
-    // Step 5: Migrate Products
-    setCurrentStep(4);
-    updateStep(4, 'running', 'Starting product migration...');
-    
-    for (let i = 0; i < data.selectedProducts.length; i++) {
-      if (isPaused) return;
-      
-      const product = data.selectedProducts[i];
-      addBrowserAction(`🚀 Migrating: ${product.name}`);
-      await simulateDelay(1000);
-      addBrowserAction(`📝 Creating product listing`);
-      await simulateDelay(1500);
-      addBrowserAction(`🖼️ Uploading product images`);
+    try {
+      // Step 1: Initialize Browser
+      updateStep(0, 'running', 'Launching browser automation...');
       await simulateDelay(2000);
-      addBrowserAction(`📁 Uploading product files`);
-      await simulateDelay(1500);
-      addBrowserAction(`💰 Setting price: $${product.price}`);
-      await simulateDelay(500);
-      addBrowserAction(`✅ ${product.name} migrated successfully`);
+      addBrowserAction('🌐 Launching Chromium browser with Playwright');
+      addBrowserAction('📱 Setting up browser context and page');
+      updateStep(0, 'completed', 'Browser initialized successfully');
+      setProgress(10);
       
-      setCompletedProducts(i + 1);
-      const productProgress = ((i + 1) / data.selectedProducts.length) * 25;
-      setProgress(66 + productProgress);
+      // Step 2: Start real browser automation
+      updateStep(1, 'running', `Starting automation for ${migrationData.destinationPlatform}...`);
       
-      addLog(`✅ Migrated: ${product.name}`);
+      addLog('📡 Sending automation request to backend...');
+      
+      const { data, error } = await supabase.functions.invoke('browser-automation', {
+        body: {
+          sessionId: migrationData.sessionId,
+          destinationCredentials
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      addLog(`✅ Automation started for ${data.productsCount} products`);
+      updateStep(1, 'completed', 'Browser automation initiated');
+      setProgress(20);
+      
+      // The real-time updates will handle the rest of the progress
+      addLog('📡 Listening for real-time updates...');
+      addBrowserAction('🔄 Real-time progress tracking active');
+      
+    } catch (error) {
+      console.error('Migration error:', error);
+      addLog(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error('Migration failed. Please try again.');
+      setIsRunning(false);
     }
-    
-    updateStep(4, 'completed', `Migrated ${data.selectedProducts.length} products`);
-    setProgress(91);
-
-    if (isPaused) return;
-
-    // Step 6: Verify Migration
-    setCurrentStep(5);
-    updateStep(5, 'running', 'Verifying migration...');
-    addBrowserAction("🔍 Verifying all products are live");
-    await simulateDelay(2000);
-    addBrowserAction("✅ All products verified successfully");
-    updateStep(5, 'completed', 'Migration verified and completed');
-    addLog("🎉 Migration completed successfully!");
-    setProgress(100);
-    setIsRunning(false);
-    
-    toast.success("🎉 Migration completed successfully!");
   };
 
   const simulateDelay = (ms: number) => {
@@ -271,6 +255,44 @@ const LiveAutomation = () => {
             </p>
           </div>
 
+          {/* Credentials Form */}
+          {showCredentials && (
+            <Card className="p-6 mb-8 border-primary">
+              <h2 className="text-xl font-semibold mb-4">Destination Platform Credentials</h2>
+              <p className="text-muted-foreground mb-6">
+                Enter your {migrationData?.destinationPlatform} login credentials to start the migration
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <Label htmlFor="dest-email">Email</Label>
+                  <Input
+                    id="dest-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={destinationCredentials.email}
+                    onChange={(e) => setDestinationCredentials(prev => ({
+                      ...prev,
+                      email: e.target.value
+                    }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dest-password">Password</Label>
+                  <Input
+                    id="dest-password"
+                    type="password"
+                    placeholder="Your password"
+                    value={destinationCredentials.password}
+                    onChange={(e) => setDestinationCredentials(prev => ({
+                      ...prev,
+                      password: e.target.value
+                    }))}
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Control Panel */}
           <Card className="p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -280,19 +302,22 @@ const LiveAutomation = () => {
                   <span className="font-semibold">Migration Status</span>
                 </div>
                 <Badge variant={isRunning ? "default" : progress === 100 ? "secondary" : "outline"}>
-                  {isRunning ? "🟢 Running" : progress === 100 ? "✅ Completed" : "⏸️ Paused"}
+                  {isRunning ? "🟢 Running" : progress === 100 ? "✅ Completed" : "⏸️ Ready"}
                 </Badge>
               </div>
               
               <div className="flex items-center gap-3">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePauseResume}
-                  disabled={progress === 100}
+                  onClick={isRunning ? handlePauseResume : startMigration}
+                  disabled={!migrationData || (showCredentials && (!destinationCredentials.email || !destinationCredentials.password))}
+                  variant={isRunning ? "outline" : "default"}
                 >
-                  {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                  {isPaused ? "Resume" : "Pause"}
+                  {isRunning ? (
+                    isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Play className="w-4 h-4 mr-2" />
+                  )}
+                  {isRunning ? (isPaused ? 'Resume' : 'Pause') : 'Start Migration'}
                 </Button>
                 
                 {progress === 100 && (

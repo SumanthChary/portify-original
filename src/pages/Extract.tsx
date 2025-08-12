@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowRight, Key, Globe, Zap, Shield } from "lucide-react";
 import Header from "@/components/Header";
+import { realGumroadService } from "@/services/RealGumroadService";
+import { supabase } from "@/integrations/supabase/client";
 
 const PLATFORMS = [
   { 
@@ -17,7 +19,7 @@ const PLATFORMS = [
     type: 'api', 
     color: 'bg-pink-500',
     description: 'Extract via API (Instant)',
-    fields: ['API Key']
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'text' }]
   },
   { 
     id: 'shopify', 
@@ -25,7 +27,10 @@ const PLATFORMS = [
     type: 'api', 
     color: 'bg-green-500',
     description: 'Extract via API (Instant)',
-    fields: ['Store URL', 'Access Token']
+    fields: [
+      { key: 'storeUrl', label: 'Store URL', type: 'text' },
+      { key: 'accessToken', label: 'Access Token', type: 'text' }
+    ]
   },
   { 
     id: 'etsy', 
@@ -33,7 +38,10 @@ const PLATFORMS = [
     type: 'api', 
     color: 'bg-orange-500',
     description: 'Extract via API (Instant)',
-    fields: ['API Key', 'Shop ID']
+    fields: [
+      { key: 'apiKey', label: 'API Key', type: 'text' },
+      { key: 'shopId', label: 'Shop ID', type: 'text' }
+    ]
   },
   { 
     id: 'payhip', 
@@ -41,7 +49,10 @@ const PLATFORMS = [
     type: 'browser', 
     color: 'bg-blue-500',
     description: 'Extract via Browser (2-3 min)',
-    fields: ['Email', 'Password']
+    fields: [
+      { key: 'email', label: 'Email', type: 'email' },
+      { key: 'password', label: 'Password', type: 'password' }
+    ]
   },
   { 
     id: 'teachable', 
@@ -49,7 +60,10 @@ const PLATFORMS = [
     type: 'browser', 
     color: 'bg-purple-500',
     description: 'Extract via Browser (2-3 min)',
-    fields: ['Email', 'Password']
+    fields: [
+      { key: 'email', label: 'Email', type: 'email' },
+      { key: 'password', label: 'Password', type: 'password' }
+    ]
   },
   { 
     id: 'thinkific', 
@@ -57,7 +71,10 @@ const PLATFORMS = [
     type: 'browser', 
     color: 'bg-indigo-500',
     description: 'Extract via Browser (2-3 min)',
-    fields: ['Email', 'Password']
+    fields: [
+      { key: 'email', label: 'Email', type: 'email' },
+      { key: 'password', label: 'Password', type: 'password' }
+    ]
   }
 ];
 
@@ -77,30 +94,78 @@ const Extract = () => {
     if (!platform) return;
 
     // Validate required fields
-    const missingFields = platform.fields.filter(field => !credentials[field]);
-    if (missingFields.length > 0) {
-      toast.error(`Please fill in: ${missingFields.join(', ')}`);
-      return;
+    for (const field of platform.fields) {
+      if (!credentials[field.key]) {
+        toast.error(`Please enter your ${field.label}`);
+        return;
+      }
     }
 
     setIsExtracting(true);
-    toast.loading("Connecting to your account...");
-
+    
     try {
-      // Simulate extraction
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Store platform and credentials in localStorage for next step
-      localStorage.setItem('extractionData', JSON.stringify({
-        platform: selectedPlatform,
-        credentials,
-        timestamp: new Date().toISOString()
-      }));
+      let extractedProducts = [];
+      let sessionId = '';
 
-      toast.success("✅ Connected! Extracting products...");
+      if (platform.id === 'gumroad' && credentials.apiKey) {
+        // Real Gumroad API extraction
+        toast.loading('Connecting to Gumroad API...');
+        
+        // Validate API key first
+        const isValidKey = await realGumroadService.validateApiKey(credentials.apiKey);
+        if (!isValidKey) {
+          throw new Error('Invalid Gumroad API key. Please check your credentials.');
+        }
+
+        // Extract products
+        toast.loading('Extracting products from Gumroad...');
+        extractedProducts = await realGumroadService.extractProducts(credentials.apiKey);
+        
+        if (extractedProducts.length === 0) {
+          toast.info('No products found in your Gumroad account');
+          return;
+        }
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error('Please log in to continue');
+          return;
+        }
+
+        // Store extraction session
+        sessionId = await realGumroadService.storeExtractionSession(
+          user.id,
+          extractedProducts,
+          platform.id
+        );
+      } else {
+        // Simulate extraction for other platforms
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        extractedProducts = [
+          { id: '1', name: 'Digital Course', price: 99, type: 'course', description: 'Learn amazing skills' },
+          { id: '2', name: 'E-book', price: 29, type: 'ebook', description: 'Comprehensive guide' },
+          { id: '3', name: 'Software Tool', price: 149, type: 'software', description: 'Productivity booster' }
+        ];
+      }
+      
+      // Store extraction data in localStorage
+      const extractionData = {
+        sessionId,
+        platform: platform.name,
+        platformId: platform.id,
+        credentials,
+        extractedAt: new Date().toISOString(),
+        products: extractedProducts
+      };
+      
+      localStorage.setItem('extractionData', JSON.stringify(extractionData));
+      
+      toast.success(`Successfully extracted ${extractedProducts.length} products from ${platform.name}`);
       navigate('/select-products');
     } catch (error) {
-      toast.error("Failed to connect. Please check your credentials.");
+      console.error('Extraction error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to extract products. Please try again.');
     } finally {
       setIsExtracting(false);
     }
@@ -207,18 +272,18 @@ const Extract = () => {
               
               <div className="space-y-4 mb-8">
                 {selectedPlatformData.fields.map((field) => (
-                  <div key={field}>
-                    <Label htmlFor={field} className="text-base font-medium">
-                      {field}
+                  <div key={field.key}>
+                    <Label htmlFor={field.key} className="text-base font-medium">
+                      {field.label}
                     </Label>
                     <Input
-                      id={field}
-                      type={field.toLowerCase().includes('password') ? 'password' : 'text'}
-                      placeholder={`Enter your ${field.toLowerCase()}`}
-                      value={credentials[field] || ''}
+                      id={field.key}
+                      type={field.type}
+                      placeholder={`Enter your ${field.label.toLowerCase()}`}
+                      value={credentials[field.key] || ''}
                       onChange={(e) => setCredentials(prev => ({
                         ...prev,
-                        [field]: e.target.value
+                        [field.key]: e.target.value
                       }))}
                       className="mt-2"
                     />

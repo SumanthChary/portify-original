@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CreditCard, Package, Zap, Shield, Check, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
+import { supabase } from "@/integrations/supabase/client";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -66,28 +67,48 @@ const Payment = () => {
   ];
 
   const handlePayment = async () => {
-    if (!migrationData) return;
+    if (!migrationData?.sessionId) {
+      toast.error('Invalid session. Please start over.');
+      return;
+    }
 
     setIsProcessing(true);
-    toast.loading("Processing payment...");
-
+    
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const processedData = {
-        ...migrationData,
-        plan: selectedPlan,
-        paymentAmount: migrationData.productCount * plans.find(p => p.id === selectedPlan)?.pricePerProduct,
-        paymentId: `pay_${Date.now()}`,
-        status: 'paid'
-      };
+      // Create Stripe payment session
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          sessionId: migrationData.sessionId,
+          productCount: migrationData.productCount || migrationData.selectedProducts.length,
+          destinationPlatform: migrationData.destinationPlatform
+        }
+      });
 
-      localStorage.setItem('processedMigration', JSON.stringify(processedData));
-      toast.success("✅ Payment successful! Starting migration...");
-      navigate('/live-automation');
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.open(data.url, '_blank');
+        
+        // Update local storage with payment info
+        const processedData = {
+          ...migrationData,
+          paymentInitiated: true,
+          plan: selectedPlan,
+          initiatedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem('migrationData', JSON.stringify(processedData));
+        
+        toast.success('Redirecting to payment...');
+      } else {
+        throw new Error('Failed to create payment session');
+      }
     } catch (error) {
-      toast.error("Payment failed. Please try again.");
+      console.error('Payment error:', error);
+      toast.error(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     } finally {
       setIsProcessing(false);
     }

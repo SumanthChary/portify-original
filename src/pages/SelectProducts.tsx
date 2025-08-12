@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ArrowRight, Package, ShoppingCart, Zap, Shield } from "lucide-react";
 import Header from "@/components/Header";
+import { supabase } from "@/integrations/supabase/client";
 
 const DESTINATION_PLATFORMS = [
   { id: 'payhip', name: 'Payhip', type: 'browser', color: 'bg-blue-500' },
@@ -76,8 +77,44 @@ const SelectProducts = () => {
       navigate('/extract');
       return;
     }
-    setExtractionData(JSON.parse(stored));
+    const data = JSON.parse(stored);
+    setExtractionData(data);
+    
+    // Load real products from database if session exists
+    if (data.sessionId) {
+      loadProductsFromDatabase(data.sessionId);
+    }
   }, [navigate]);
+
+  const loadProductsFromDatabase = async (sessionId: string) => {
+    try {
+      const { data: products, error } = await supabase
+        .from('universal_products')
+        .select('*')
+        .eq('session_id', sessionId);
+
+      if (error) {
+        console.error('Error loading products:', error);
+        return;
+      }
+
+      if (products && products.length > 0) {
+        const formattedProducts = products.map(product => ({
+          id: product.source_product_id,
+          name: product.title,
+          price: Number(product.price) || 0,
+          description: product.description || '',
+          type: product.category || 'digital',
+          images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images || [],
+          tags: product.tags || []
+        }));
+        
+        setExtractionData(prev => prev ? { ...prev, products: formattedProducts } : null);
+      }
+    } catch (error) {
+      console.error('Error loading products from database:', error);
+    }
+  };
 
   const handleProductToggle = (productId: string) => {
     setSelectedProducts(prev => {
@@ -111,13 +148,20 @@ const SelectProducts = () => {
       return;
     }
 
+    const products = extractionData?.products || MOCK_PRODUCTS;
+    const selectedProductsList = products.filter(p => selectedProducts.includes(p.id));
+    const basePrice = 2.99;
+    const platformMultiplier = destinationPlatform === 'payhip' ? 1 : 1.5;
+    const totalCost = selectedProductsList.length * basePrice * platformMultiplier;
+
     const migrationData = {
       ...extractionData,
-      selectedProducts: MOCK_PRODUCTS.filter(p => selectedProducts.includes(p.id)),
+      selectedProducts: selectedProductsList,
       destinationPlatform,
-      productCount: selectedProducts.length
+      totalCost,
+      productCount: selectedProductsList.length
     };
-
+    
     localStorage.setItem('migrationData', JSON.stringify(migrationData));
     navigate('/payment');
   };
@@ -166,7 +210,7 @@ const SelectProducts = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {MOCK_PRODUCTS.map((product) => (
+                  {(extractionData?.products || MOCK_PRODUCTS).map((product) => (
                     <Card 
                       key={product.id}
                       className={`p-4 cursor-pointer transition-all hover:shadow-md border-2 ${
@@ -182,7 +226,7 @@ const SelectProducts = () => {
                           onChange={() => {}}
                         />
                         <img 
-                          src={product.image} 
+                          src={product.image || product.images?.[0] || '/lovable-uploads/071ce28d-6d53-431f-b381-0bb44bee394d.png'} 
                           alt={product.name}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
