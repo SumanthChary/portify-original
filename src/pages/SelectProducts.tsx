@@ -182,11 +182,11 @@ const SelectProducts = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
-              Select Products to Migrate
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
+              Step 2: Pick What to Copy
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Found {MOCK_PRODUCTS.length} products from your {extractionData.platform} account
+            <p className="text-lg md:text-xl text-muted-foreground">
+              We found {(extractionData?.products || MOCK_PRODUCTS).length} products! Choose which ones to copy.
             </p>
           </div>
 
@@ -195,9 +195,9 @@ const SelectProducts = () => {
             <div className="lg:col-span-2 space-y-6">
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-semibold flex items-center gap-2">
-                    <Package className="w-6 h-6 text-primary" />
-                    Your Products ({MOCK_PRODUCTS.length})
+                  <h2 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
+                    <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                    Your Products ({(extractionData?.products || MOCK_PRODUCTS).length})
                   </h2>
                   <Button
                     variant="outline"
@@ -248,34 +248,34 @@ const SelectProducts = () => {
             {/* Selection Summary */}
             <div className="space-y-6">
               <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <h3 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
                   <ShoppingCart className="w-5 h-5 text-primary" />
-                  Migration Summary
+                  What You're Copying
                 </h3>
                 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span>Selected Products:</span>
+                    <span>Products to copy:</span>
                     <span className="font-bold">{selectedProducts.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total Value:</span>
+                    <span>Total worth:</span>
                     <span className="font-bold text-primary">${totalValue.toFixed(2)}</span>
                   </div>
                   <div className="border-t pt-4">
                     <span className="text-sm text-muted-foreground">
-                      Migration Cost: ${selectedProducts.length * 2.99}/product
+                      Copy cost: Just ${selectedProducts.length * 2.99} total
                     </span>
                   </div>
                 </div>
               </Card>
 
               <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Choose Destination</h3>
+                <h3 className="text-lg md:text-xl font-semibold mb-4">Copy To Where?</h3>
                 
                 <Select value={destinationPlatform} onValueChange={setDestinationPlatform}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select destination platform" />
+                    <SelectValue placeholder="Pick where to copy them" />
                   </SelectTrigger>
                   <SelectContent>
                     {DESTINATION_PLATFORMS.map((platform) => (
@@ -298,10 +298,10 @@ const SelectProducts = () => {
               <Button 
                 onClick={handleProceed}
                 disabled={selectedProducts.length === 0 || !destinationPlatform}
-                className="w-full text-lg py-6"
+                className="w-full text-base md:text-lg py-4 md:py-6"
                 size="lg"
               >
-                Proceed to Payment
+                Let's Do This!
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>

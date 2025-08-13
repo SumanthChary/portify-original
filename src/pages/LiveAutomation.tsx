@@ -247,20 +247,20 @@ const LiveAutomation = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
-              🤖 Live Migration Automation
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
+              🤖 Watch The Magic Happen
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Watch your products migrate in real-time with AI-powered browser automation
+            <p className="text-lg md:text-xl text-muted-foreground">
+              See your products get copied live by our AI robot
             </p>
           </div>
 
           {/* Credentials Form */}
           {showCredentials && (
             <Card className="p-6 mb-8 border-primary">
-              <h2 className="text-xl font-semibold mb-4">Destination Platform Credentials</h2>
+              <h2 className="text-lg md:text-xl font-semibold mb-4">One Last Thing - Your Login</h2>
               <p className="text-muted-foreground mb-6">
-                Enter your {migrationData?.destinationPlatform} login credentials to start the migration
+                We need to log into your {migrationData?.destinationPlatform} account to copy your products there
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
@@ -299,10 +299,10 @@ const LiveAutomation = () => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Monitor className="w-5 h-5 text-primary" />
-                  <span className="font-semibold">Migration Status</span>
+                  <span className="font-semibold">What's Happening</span>
                 </div>
                 <Badge variant={isRunning ? "default" : progress === 100 ? "secondary" : "outline"}>
-                  {isRunning ? "🟢 Running" : progress === 100 ? "✅ Completed" : "⏸️ Ready"}
+                  {isRunning ? "🟢 Working" : progress === 100 ? "✅ All Done!" : "⏸️ Ready"}
                 </Badge>
               </div>
               
@@ -317,7 +317,7 @@ const LiveAutomation = () => {
                   ) : (
                     <Play className="w-4 h-4 mr-2" />
                   )}
-                  {isRunning ? (isPaused ? 'Resume' : 'Pause') : 'Start Migration'}
+                  {isRunning ? (isPaused ? 'Resume' : 'Pause') : 'Start Copying'}
                 </Button>
                 
                 {progress === 100 && (
@@ -342,10 +342,10 @@ const LiveAutomation = () => {
                 <Progress value={progress} className="w-full" />
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="text-center">
                   <div className="font-bold text-lg">{completedProducts}</div>
-                  <div className="text-muted-foreground">Products Migrated</div>
+                  <div className="text-muted-foreground">Products Copied</div>
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-lg">{migrationData.selectedProducts.length}</div>
@@ -353,11 +353,11 @@ const LiveAutomation = () => {
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-lg capitalize">{migrationData.platform}</div>
-                  <div className="text-muted-foreground">Source Platform</div>
+                  <div className="text-muted-foreground">From</div>
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-lg capitalize">{migrationData.destinationPlatform}</div>
-                  <div className="text-muted-foreground">Destination</div>
+                  <div className="text-muted-foreground">To</div>
                 </div>
               </div>
             </div>
@@ -366,9 +366,9 @@ const LiveAutomation = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Steps Panel */}
             <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                Migration Steps
+                What's Happening
               </h2>
               
               <div className="space-y-4">
@@ -402,9 +402,9 @@ const LiveAutomation = () => {
 
             {/* Browser Actions Panel */}
             <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
                 <Mouse className="w-5 h-5 text-primary" />
-                Live Browser Actions
+                Robot Actions
               </h2>
               
               <div 
@@ -417,16 +417,16 @@ const LiveAutomation = () => {
                   </div>
                 ))}
                 {browserActions.length === 0 && (
-                  <div className="text-muted-foreground">Waiting for browser actions...</div>
+                  <div className="text-muted-foreground">Robot will show what it's doing here...</div>
                 )}
               </div>
             </Card>
 
             {/* System Logs Panel */}
             <Card className="p-6 lg:col-span-2">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
                 <Keyboard className="w-5 h-5 text-primary" />
-                System Logs
+                Behind The Scenes
               </h2>
               
               <div 
@@ -439,7 +439,7 @@ const LiveAutomation = () => {
                   </div>
                 ))}
                 {logs.length === 0 && (
-                  <div className="text-muted-foreground">System logs will appear here...</div>
+                  <div className="text-muted-foreground">System info will show here...</div>
                 )}
               </div>
             </Card>

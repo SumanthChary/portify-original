@@ -181,30 +181,30 @@ const Extract = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
-              Extract Your Products
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
+              Step 1: Get Your Products
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Connect to your platform to extract products for migration
+            <p className="text-lg md:text-xl text-muted-foreground">
+              Tell us where your products are so we can copy them
             </p>
           </div>
 
           {/* Platform Selection */}
           <Card className="p-8 mb-8">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-              <Globe className="w-6 h-6 text-primary" />
-              Choose Your Source Platform
+            <h2 className="text-xl md:text-2xl font-semibold mb-6 flex items-center gap-2">
+              <Globe className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              Where Are Your Products?
             </h2>
             
             <Tabs value={selectedPlatform ? PLATFORMS.find(p => p.id === selectedPlatform)?.type : "api"} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="api" className="flex items-center gap-2">
+                <TabsTrigger value="api" className="flex items-center gap-2 text-sm md:text-base">
                   <Zap className="w-4 h-4" />
-                  API Platforms (Instant)
+                  Super Fast (Instant)
                 </TabsTrigger>
-                <TabsTrigger value="browser" className="flex items-center gap-2">
+                <TabsTrigger value="browser" className="flex items-center gap-2 text-sm md:text-base">
                   <Shield className="w-4 h-4" />
-                  Browser Platforms (2-3 min)
+                  Safe Login (2 min)
                 </TabsTrigger>
               </TabsList>
 
@@ -265,9 +265,9 @@ const Extract = () => {
           {/* Credentials Form */}
           {selectedPlatformData && (
             <Card className="p-8">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-                <Key className="w-6 h-6 text-primary" />
-                Enter Your {selectedPlatformData.name} Credentials
+              <h2 className="text-xl md:text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Key className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                Enter Your {selectedPlatformData.name} Info
               </h2>
               
               <div className="space-y-4 mb-8">
@@ -294,22 +294,21 @@ const Extract = () => {
               <div className="bg-muted/50 rounded-lg p-4 mb-6">
                 <p className="text-sm text-muted-foreground">
                   <Shield className="w-4 h-4 inline mr-2" />
-                  Your credentials are used only for extraction and are not stored permanently. 
-                  We use military-grade encryption for all connections.
+                  We only use this to get your products. Your login info is 100% safe and not saved.
                 </p>
               </div>
 
               <Button 
                 onClick={handleExtract}
                 disabled={isExtracting || !selectedPlatform}
-                className="w-full text-lg py-6"
+                className="w-full text-base md:text-lg py-4 md:py-6"
                 size="lg"
               >
                 {isExtracting ? (
-                  "Extracting Products..."
+                  "Getting Your Products..."
                 ) : (
                   <>
-                    Extract Products
+                    Get My Products
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}

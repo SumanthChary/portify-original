@@ -27,40 +27,40 @@ const Payment = () => {
   const plans = [
     {
       id: 'basic',
-      name: 'Basic Migration',
+      name: 'Basic Copy',
       pricePerProduct: 2.99,
       features: [
-        'Standard browser automation',
-        'Basic error handling',
-        'Email support',
-        '24-48 hour processing'
+        'Copies your products safely',
+        'Done in 1-2 hours',
+        'Email when finished',
+        'Works for most products'
       ],
       badge: null
     },
     {
       id: 'standard',
-      name: 'Smart Migration',
+      name: 'Smart Copy',
       pricePerProduct: 4.99,
       features: [
-        'AI-powered browser automation',
-        'Advanced error handling',
-        'Real-time progress tracking',
-        'Priority processing',
+        'AI copies everything perfectly',
+        'Watch it happen live',
+        'Done in 30 minutes',
+        'Fixes problems automatically',
         '99.5% success rate'
       ],
       badge: 'Most Popular'
     },
     {
       id: 'premium',
-      name: 'Premium Migration',
+      name: 'Super Fast Copy',
       pricePerProduct: 7.99,
       features: [
-        'Hybrid AI + API automation',
-        'Military-grade stealth browser',
-        'Live automation screen',
-        'Instant processing for API platforms',
+        'Ultra-fast AI robot',
+        'Watch live like a movie',
+        'Done in 10 minutes',
+        'Perfect copy every time',
         '99.9% success rate',
-        'White-glove support'
+        'VIP support'
       ],
       badge: 'Best Value'
     }
@@ -129,20 +129,20 @@ const Payment = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
-              Complete Your Migration
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
+              Step 3: Pay & Start
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Choose your migration plan and start the automation
+            <p className="text-lg md:text-xl text-muted-foreground">
+              Pick your plan and we'll copy your products automatically
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Pricing Plans */}
             <div className="lg:col-span-2">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-                <CreditCard className="w-6 h-6 text-primary" />
-                Choose Migration Plan
+              <h2 className="text-xl md:text-2xl font-semibold mb-6 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                How Fast Do You Want It?
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -195,18 +195,18 @@ const Payment = () => {
             {/* Order Summary */}
             <div className="space-y-6">
               <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <h3 className="text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
                   <Package className="w-5 h-5 text-primary" />
-                  Order Summary
+                  What You're Getting
                 </h3>
                 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span>Source Platform:</span>
+                    <span>From:</span>
                     <span className="font-bold capitalize">{migrationData.platform}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Destination:</span>
+                    <span>To:</span>
                     <span className="font-bold capitalize">{migrationData.destinationPlatform}</span>
                   </div>
                   <div className="flex justify-between">
@@ -214,7 +214,7 @@ const Payment = () => {
                     <span className="font-bold">{migrationData.productCount}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Plan:</span>
+                    <span>Speed:</span>
                     <span className="font-bold">{selectedPlanData?.name}</span>
                   </div>
                   <div className="border-t pt-4">
@@ -231,19 +231,19 @@ const Payment = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    Payment processed securely
+                    You pay safely with Stripe
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    Live automation screen opens
+                    Watch the robot work live
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                    Watch real-time migration
+                    See your products get copied
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                    Receive completion notification
+                    Get email when it's done
                   </div>
                 </div>
               </Card>
@@ -251,14 +251,14 @@ const Payment = () => {
               <Button 
                 onClick={handlePayment}
                 disabled={isProcessing}
-                className="w-full text-lg py-6"
+                className="w-full text-base md:text-lg py-4 md:py-6"
                 size="lg"
               >
                 {isProcessing ? (
-                  "Processing Payment..."
+                  "Opening payment..."
                 ) : (
                   <>
-                    Start Migration - ${totalAmount.toFixed(2)}
+                    Pay ${totalAmount.toFixed(2)} & Start
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
@@ -266,7 +266,7 @@ const Payment = () => {
 
               <div className="text-center text-xs text-muted-foreground">
                 <Shield className="w-4 h-4 inline mr-1" />
-                Secure payment processing with 256-bit encryption
+                100% safe payment with Stripe. Your card info is super secure.
               </div>
             </div>
           </div>
