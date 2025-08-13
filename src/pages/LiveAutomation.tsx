@@ -22,6 +22,7 @@ import {
   Download
 } from "lucide-react";
 import Header from "@/components/Header";
+import LiveBrowserView from "@/components/LiveBrowserView";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AutomationStep {
@@ -50,6 +51,7 @@ const LiveAutomation = () => {
     password: ''
   });
   const [showCredentials, setShowCredentials] = useState(true);
+  const [currentBrowserAction, setCurrentBrowserAction] = useState<string>("");
   const logsRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -82,11 +84,20 @@ const LiveAutomation = () => {
   const setupRealtimeUpdates = (sessionId: string) => {
     const channel = supabase.channel(`migration-${sessionId}`);
     
+    // Listen for browser actions (live updates)
+    channel.on('broadcast', { event: 'browser_action' }, (payload) => {
+      const { action } = payload.payload;
+      addBrowserAction(action);
+      setCurrentBrowserAction(action);
+    });
+    
+    // Listen for migration progress
     channel.on('broadcast', { event: 'migration_progress' }, (payload) => {
       const { productId, status, progress: productProgress } = payload.payload;
       
       if (productProgress !== undefined) {
         setProgress(productProgress);
+        setCompletedProducts(Math.floor((productProgress / 100) * migrationData?.selectedProducts?.length || 0));
       }
       
       // Update step status
@@ -96,7 +107,13 @@ const LiveAutomation = () => {
           : step
       ));
       
-      addLog(`Product ${productId} ${status}`);
+      addLog(`✅ Product copied: ${productId}`);
+      
+      if (productProgress === 100) {
+        addLog('🎉 All products copied successfully!');
+        addBrowserAction('🏁 Migration completed!');
+        setIsRunning(false);
+      }
     });
     
     channel.subscribe();
@@ -362,6 +379,14 @@ const LiveAutomation = () => {
               </div>
             </div>
           </Card>
+
+          {/* Live Browser View */}
+          <div className="mb-8">
+            <LiveBrowserView 
+              isActive={isRunning} 
+              currentAction={currentBrowserAction}
+            />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Steps Panel */}
