@@ -43,28 +43,25 @@ chrome.runtime.onConnect.addListener((port) => {
 
 async function startScreenCapture(sessionId, tabId) {
   try {
+    // Use the newer chrome.tabCapture.capture API properly
     const stream = await chrome.tabCapture.capture({
       audio: false,
-      video: true,
-      videoConstraints: {
-        mandatory: {
-          chromeMediaSource: 'tab',
-          maxWidth: 1920,
-          maxHeight: 1080,
-          maxFrameRate: 10
-      }
-      }
+      video: true
     });
     
     const port = connections.get(sessionId);
     if (port) {
       port.postMessage({ 
         type: 'SCREEN_CAPTURE_STARTED', 
-        streamId: stream.id 
+        streamId: stream ? stream.id : null 
       });
     }
   } catch (error) {
     console.error('Screen capture failed:', error);
+    const port = connections.get(sessionId);
+    if (port) {
+      port.postMessage({ type: 'ERROR', error: 'Screen capture failed: ' + error.message });
+    }
   }
 }
 

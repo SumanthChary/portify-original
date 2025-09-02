@@ -84,23 +84,27 @@ class PortifyAutomation {
   
   async setupScreenShare() {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { 
-          mediaSource: 'screen',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 10, max: 15 }
-        },
-        audio: false
-      });
+      // For extension, we'll use chrome.tabCapture instead of getDisplayMedia
+      // This will be handled by the background script
+      console.log('Screen share setup - using chrome.tabCapture via background script');
       
-      stream.getTracks().forEach(track => {
-        this.peerConnection.addTrack(track, stream);
+      // Request screen capture from background script
+      chrome.runtime.sendMessage({
+        type: 'START_SCREEN_CAPTURE',
+        tabId: await this.getCurrentTabId()
       });
       
     } catch (error) {
       console.error('Screen share setup failed:', error);
     }
+  }
+  
+  async getCurrentTabId() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'GET_CURRENT_TAB' }, (response) => {
+        resolve(response?.tabId || null);
+      });
+    });
   }
   
   async handleWebRTCOffer(offer, sessionId) {
@@ -111,6 +115,7 @@ class PortifyAutomation {
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
     
+    // Send answer back to background script
     chrome.runtime.sendMessage({
       type: 'WEBRTC_ANSWER',
       answer: answer,

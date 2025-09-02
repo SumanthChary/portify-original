@@ -18,6 +18,10 @@ class PortifyPopup {
       this.toggleConnection();
     });
     
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      this.copySessionId();
+    });
+    
     // Update UI every second
     setInterval(() => {
       this.updateUI();
@@ -127,10 +131,28 @@ class PortifyPopup {
     }
   }
   
+  copySessionId() {
+    if (this.sessionId) {
+      navigator.clipboard.writeText(this.sessionId).then(() => {
+        this.showSuccess('Session ID copied to clipboard!');
+      }).catch((error) => {
+        console.error('Failed to copy to clipboard:', error);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = this.sessionId;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        this.showSuccess('Session ID copied to clipboard!');
+      });
+    }
+  }
+
   async copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
-      this.showSuccess(`Session ID copied to clipboard: ${text}`);
+      this.showSuccess(`Session ID copied to clipboard!`);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }
@@ -149,16 +171,17 @@ class PortifyPopup {
   }
   
   showNotification(message, type) {
-    const statusText = document.getElementById('statusText');
-    const originalText = statusText.textContent;
+    const messageContainer = document.getElementById('messageContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+    messageDiv.textContent = message;
     
-    statusText.textContent = message;
-    statusText.style.color = type === 'error' ? '#f87171' : 
-                           type === 'success' ? '#4ade80' : '#ffffff';
+    messageContainer.appendChild(messageDiv);
     
     setTimeout(() => {
-      statusText.textContent = originalText;
-      statusText.style.color = '#ffffff';
+      if (messageContainer.contains(messageDiv)) {
+        messageContainer.removeChild(messageDiv);
+      }
     }, 3000);
   }
 }

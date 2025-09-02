@@ -140,9 +140,9 @@ export default function LiveAutomation() {
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
 
-      // In a real implementation, you'd send this offer to the extension
-      // through a signaling server. For now, we'll simulate the connection
-      setCurrentAction('Waiting for extension to accept connection...');
+      // In a real implementation, this would connect to the extension via WebRTC signaling
+      // For now, we'll simulate the connection for demo purposes
+      setCurrentAction('Establishing WebRTC connection...');
       
       // Simulate successful connection after 2 seconds
       setTimeout(() => {
@@ -156,7 +156,7 @@ export default function LiveAutomation() {
     }
   };
 
-  // Simulates extension connection (in real implementation, this happens via WebRTC)
+  // For demo purposes - simulates extension connection (in real implementation, this happens via WebRTC)
   const simulateExtensionConnection = async (peerConnection: RTCPeerConnection) => {
     // Create a data channel
     const dataChannel = peerConnection.createDataChannel('automation', {
@@ -165,7 +165,8 @@ export default function LiveAutomation() {
 
     dataChannelRef.current = dataChannel;
 
-    dataChannel.onopen = () => {
+    // Simulate opening the data channel
+    setTimeout(() => {
       setConnection(prev => ({
         ...prev,
         isConnected: true,
@@ -175,19 +176,31 @@ export default function LiveAutomation() {
       }));
       setCurrentAction('Connected - Ready for automation');
       toast.success('Connected to browser extension!');
-    };
+      
+      // Simulate receiving status updates
+      simulateStatusUpdates();
+    }, 1000);
 
-    dataChannel.onmessage = (event) => {
-      const message = JSON.parse(event.data);
+    // Mock message handling for demo
+    const mockMessageHandler = (message: any) => {
       handleExtensionMessage(message);
     };
+  };
 
-    // Simulate the data channel opening
-    setTimeout(() => {
-      if (dataChannel.readyState === 'open' || true) {
-        dataChannel.onopen?.(new Event('open'));
-      }
-    }, 1000);
+  const simulateStatusUpdates = () => {
+    // Simulate some automation status updates for demo
+    const statusUpdates = [
+      'Browser ready for automation',
+      'Extension loaded successfully',
+      'Screen capture initialized',
+      'Ready to receive commands'
+    ];
+
+    statusUpdates.forEach((status, index) => {
+      setTimeout(() => {
+        setCurrentAction(status);
+      }, (index + 1) * 1000);
+    });
   };
 
   const handleExtensionMessage = (message: any) => {
