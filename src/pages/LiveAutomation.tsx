@@ -53,6 +53,8 @@ export default function LiveAutomation() {
   const [isAutomating, setIsAutomating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [offerSdp, setOfferSdp] = useState('');
+  const [answerSdp, setAnswerSdp] = useState('');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);

@@ -52,20 +52,18 @@ class PortifyAutomation {
       ]
     });
     
-    // Setup data channel for commands
-    this.dataChannel = this.peerConnection.createDataChannel('automation', {
-      ordered: true
-    });
-    
-    this.dataChannel.onopen = () => {
-      this.isConnected = true;
-      this.sendStatus('connected');
-      this.processQueue();
-    };
-    
-    this.dataChannel.onmessage = (event) => {
-      const command = JSON.parse(event.data);
-      this.executeCommand(command);
+    // Wait for data channel from the web app (offerer creates it)
+    this.peerConnection.ondatachannel = (event) => {
+      this.dataChannel = event.channel;
+      this.dataChannel.onopen = () => {
+        this.isConnected = true;
+        this.sendStatus('connected');
+        this.processQueue();
+      };
+      this.dataChannel.onmessage = (e) => {
+        const command = JSON.parse(e.data);
+        this.executeCommand(command);
+      };
     };
     
     // Handle ICE candidates
@@ -84,18 +82,12 @@ class PortifyAutomation {
   
   async setupScreenShare() {
     try {
-      // For extension, we'll use chrome.tabCapture instead of getDisplayMedia
-      // This will be handled by the background script
-      console.log('Screen share setup - using chrome.tabCapture via background script');
-      
-      // Request screen capture from background script
-      chrome.runtime.sendMessage({
-        type: 'START_SCREEN_CAPTURE',
-        tabId: await this.getCurrentTabId()
-      });
-      
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      stream.getTracks().forEach(track => this.peerConnection.addTrack(track, stream));
+      this.sendStatus('screen_share_started');
     } catch (error) {
       console.error('Screen share setup failed:', error);
+      this.sendStatus('error', 'Screen share denied or failed');
     }
   }
   
@@ -158,6 +150,10 @@ class PortifyAutomation {
         break;
       case 'CREATE_PRODUCT':
         this.createProduct(command.productData, command.platform);
+        break;
+      case 'EXTRACT_PRODUCTS':
+        // Stub: you can implement real extraction later
+        this.sendStatus('products_extracted', []);
         break;
     }
   }

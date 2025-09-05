@@ -23,9 +23,9 @@
     <strong>How to use:</strong>
     <ol>
       <li>Click "Connect to Web App" above</li>
-      <li>Go to <a href="https://portify-original.lovable.app/live-automation" class="web-app-link" target="_blank">Portify Live Automation</a></li>
-      <li>Enter your session ID when prompted</li>
-      <li>Watch your browser being automated in real-time!</li>
+      <li>Open <a href="https://portify-original.lovable.app/live-automation" class="web-app-link" target="_blank">Portify Live Automation</a></li>
+      <li>Paste the Offer below when the web app shows it</li>
+      <li>Copy the generated Answer back into the web app</li>
     </ol>
   </div>
   
@@ -37,6 +37,20 @@
     </div>
     <div style="margin-top: 8px;">
       <strong>Status:</strong> <span id="connectionStatus">Connecting...</span>
+    </div>
+  </div>
+  
+  <div class="manual-pairing" style="margin-top:12px;">
+    <strong>Manual WebRTC Pairing</strong>
+    <div style="margin-top:6px;">
+      <label>Paste Offer (from Web App):</label>
+      <textarea id="offerInput" placeholder='Paste SDP Offer JSON here' style="width:100%;height:80px"></textarea>
+      <button class="copy-btn" id="sendOfferBtn">Send Offer to Extension</button>
+    </div>
+    <div style="margin-top:10px;">
+      <label>Answer (copy to Web App):</label>
+      <textarea id="answerOutput" readonly style="width:100%;height:80px"></textarea>
+      <button class="copy-btn" id="copyAnswerBtn">Copy Answer</button>
     </div>
   </div>
   

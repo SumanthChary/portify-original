@@ -22,6 +22,15 @@ class PortifyPopup {
       this.copySessionId();
     });
     
+    const sendOfferBtn = document.getElementById('sendOfferBtn');
+    if (sendOfferBtn) {
+      sendOfferBtn.addEventListener('click', () => this.sendOfferToExtension());
+    }
+    const copyAnswerBtn = document.getElementById('copyAnswerBtn');
+    if (copyAnswerBtn) {
+      copyAnswerBtn.addEventListener('click', () => this.copyAnswer());
+    }
+    
     // Update UI every second
     setInterval(() => {
       this.updateUI();
@@ -81,7 +90,21 @@ class PortifyPopup {
       case 'AUTOMATION_STARTED':
         this.showInfo('Automation started');
         break;
-        
+      
+      case 'WEBRTC_ANSWER':
+        try {
+          const answerOutput = document.getElementById('answerOutput');
+          if (answerOutput) {
+            const answerJson = JSON.stringify(message.answer);
+            answerOutput.value = answerJson;
+            this.copyToClipboard(answerJson);
+            this.showSuccess('Answer generated and copied! Paste into the web app.');
+          }
+        } catch (e) {
+          this.showError('Failed to process answer');
+        }
+        break;
+      
       case 'ERROR':
         this.showError(message.error);
         break;
@@ -155,6 +178,28 @@ class PortifyPopup {
       this.showSuccess(`Session ID copied to clipboard!`);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+    }
+  }
+  
+  sendOfferToExtension() {
+    try {
+      const offerInput = document.getElementById('offerInput');
+      if (!offerInput || !this.port) throw new Error('Not connected or missing offer');
+      const raw = offerInput.value.trim();
+      const offer = JSON.parse(raw);
+      this.port.postMessage({ type: 'WEBRTC_OFFER', offer });
+      this.showInfo('Offer sent to extension');
+    } catch (e) {
+      this.showError('Invalid Offer JSON');
+    }
+  }
+
+  copyAnswer() {
+    const answerOutput = document.getElementById('answerOutput');
+    if (answerOutput && answerOutput.value) {
+      navigator.clipboard.writeText(answerOutput.value).then(() => {
+        this.showSuccess('Answer copied! Paste into the web app.');
+      });
     }
   }
   
