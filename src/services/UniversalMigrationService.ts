@@ -65,15 +65,21 @@ class UniversalMigrationService {
     const sessionId = crypto.randomUUID();
     
     // Store encrypted credentials in Supabase
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !userData.user) {
+      throw new Error('User not authenticated. Please log in first.');
+    }
+
     const { data, error } = await supabase
       .from('migration_sessions')
       .insert({
         session_id: sessionId,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+        user_id: userData.user.id, // Guaranteed to exist
         source_platform: sourcePlatform,
         destination_platform: destinationPlatform,
         credentials: this.encryptCredentials(credentials),
-        status: 'authenticated',
+        status: 'authenticated', // Valid status value
         created_at: new Date().toISOString()
       })
       .select()

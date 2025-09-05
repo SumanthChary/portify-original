@@ -13,6 +13,7 @@ import { Loader2, ShoppingBag, ArrowRight, Check, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { payhipService } from '@/services/PayhipService';
 import { supabase } from '@/integrations/supabase/client';
+import { MigrationErrorHandler } from '@/utils/migrationErrorHandler';
 
 interface Product {
   id: string;
@@ -97,7 +98,15 @@ const SimpleMigration = () => {
       toast.success(`Successfully connected! Found ${fetchedProducts.length} products.`);
     } catch (error: any) {
       console.error('Connection error:', error);
-      toast.error(error.message || 'Failed to connect accounts');
+      const migrationError = MigrationErrorHandler.handleError(error);
+      toast.error(migrationError.userFriendlyMessage);
+      
+      // Show retry message if applicable
+      if (migrationError.recoverable) {
+        setTimeout(() => {
+          toast.info(MigrationErrorHandler.getRetryMessage(migrationError));
+        }, 2000);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +128,11 @@ const SimpleMigration = () => {
       return;
     }
 
+    if (!user) {
+      toast.error('Please log in to migrate products');
+      return;
+    }
+
     setMigrationStatus('migrating');
     
     try {
@@ -132,10 +146,10 @@ const SimpleMigration = () => {
         .from('migration_sessions')
         .insert({
           session_id: sessionId,
-          user_id: user?.id,
+          user_id: user.id, // user is guaranteed to exist due to check above
           source_platform: 'gumroad',
           destination_platform: 'payhip',
-          status: 'in_progress',
+          status: 'migrating', // Use valid status value
           products_data: JSON.parse(JSON.stringify(selectedProductsArray)),
           credentials: JSON.parse(JSON.stringify({
             gumroad_api_key: credentials.gumroadApiKey,
@@ -145,7 +159,9 @@ const SimpleMigration = () => {
         });
 
       if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
+        console.error('Database error:', dbError);
+        const migrationError = MigrationErrorHandler.handleError(dbError);
+        throw new Error(migrationError.userFriendlyMessage);
       }
 
       // Call the migration edge function
@@ -175,7 +191,15 @@ const SimpleMigration = () => {
       
     } catch (error: any) {
       console.error('Migration error:', error);
-      toast.error(error.message || 'Migration failed');
+      const migrationError = MigrationErrorHandler.handleError(error);
+      toast.error(migrationError.userFriendlyMessage);
+      
+      if (migrationError.recoverable) {
+        setTimeout(() => {
+          toast.info(MigrationErrorHandler.getRetryMessage(migrationError));
+        }, 2000);
+      }
+      
       setMigrationStatus('idle');
     }
   };

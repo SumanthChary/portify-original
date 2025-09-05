@@ -64,7 +64,7 @@ export type Database = {
           source_platform: string
           status: string
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           completed_at?: string | null
@@ -77,7 +77,7 @@ export type Database = {
           source_platform: string
           status?: string
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           completed_at?: string | null
@@ -90,7 +90,7 @@ export type Database = {
           source_platform?: string
           status?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
