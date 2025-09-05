@@ -72,15 +72,33 @@ const Payment = () => {
       return;
     }
 
+    // Check if user is exceptional (bypass payment)
+    const { data: { user } } = await supabase.auth.getUser();
+    const userEmail = user?.email;
+
+    if (userEmail === 'enjoywithpandu@gmail.com') {
+      toast.success('Exceptional user detected! Bypassing payment...');
+      navigate('/live-automation?session=' + migrationData.sessionId + '&payment_success=true&bypass=true');
+      return;
+    }
+
+    // Check for zero products
+    const productCount = migrationData.productCount || migrationData.selectedProducts?.length || 0;
+    if (productCount <= 0) {
+      toast.error('Cannot proceed with 0 products. Please go back and select products.');
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      // Create Stripe payment session
+      // Create PayPal payment session
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           sessionId: migrationData.sessionId,
-          productCount: migrationData.productCount || migrationData.selectedProducts.length,
-          destinationPlatform: migrationData.destinationPlatform
+          productCount: productCount,
+          destinationPlatform: migrationData.destinationPlatform,
+          userEmail: userEmail
         }
       });
 
@@ -88,7 +106,7 @@ const Payment = () => {
         throw new Error(error.message);
       }
 
-      // Redirect to Stripe Checkout
+      // Redirect to PayPal Checkout
       if (data.url) {
         window.open(data.url, '_blank');
         
@@ -102,7 +120,7 @@ const Payment = () => {
         
         localStorage.setItem('migrationData', JSON.stringify(processedData));
         
-        toast.success('Redirecting to payment...');
+        toast.success('Redirecting to PayPal payment...');
       } else {
         throw new Error('Failed to create payment session');
       }
@@ -264,9 +282,9 @@ const Payment = () => {
                 )}
               </Button>
 
-              <div className="text-center text-xs text-muted-foreground">
+                 <div className="text-center text-xs text-muted-foreground">
                 <Shield className="w-4 h-4 inline mr-1" />
-                100% safe payment with Stripe. Your card info is super secure.
+                100% safe payment with PayPal. Your info is super secure.
               </div>
             </div>
           </div>

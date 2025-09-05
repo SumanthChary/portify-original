@@ -137,7 +137,40 @@ const SelectProducts = () => {
     }
   };
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
+    // Check if user is exceptional (bypass payment)
+    const { data: { user } } = await supabase.auth.getUser();
+    const userEmail = user?.email;
+
+    if (userEmail === 'enjoywithpandu@gmail.com') {
+      toast.success('Exceptional user detected! Proceeding without payment...');
+      
+      if (!destinationPlatform) {
+        toast.error("Please select a destination platform");
+        return;
+      }
+
+      const products = extractionData?.products || MOCK_PRODUCTS;
+      // For exceptional user, select all products if none selected
+      const finalSelectedProducts = selectedProducts.length === 0 ? 
+        products.map(p => p.id) : selectedProducts;
+      
+      const selectedProductsList = products.filter(p => finalSelectedProducts.includes(p.id));
+
+      const migrationData = {
+        ...extractionData,
+        selectedProducts: selectedProductsList,
+        destinationPlatform,
+        totalCost: 0, // Free for exceptional user
+        productCount: selectedProductsList.length,
+        exceptional: true
+      };
+      
+      localStorage.setItem('migrationData', JSON.stringify(migrationData));
+      navigate('/live-automation?bypass=true');
+      return;
+    }
+
     if (selectedProducts.length === 0) {
       toast.error("Please select at least one product");
       return;
