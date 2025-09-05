@@ -9,7 +9,7 @@ export interface GumroadProduct {
   url: string;
   preview_url?: string;
   thumbnail_url?: string;
-  tags: string;
+  tags?: string | string[];
   formatted_price: string;
   file_info: any;
   sales_count: number;
@@ -111,7 +111,7 @@ export class RealGumroadService {
       ]),
       files: JSON.stringify(product.file_info || []),
       variants: JSON.stringify([]),
-      tags: product.tags ? product.tags.split(',').map(tag => tag.trim()) : [],
+      tags: Array.isArray(product.tags) ? product.tags : (typeof product.tags === 'string' ? product.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []),
       category: product.product_type || 'digital',
       status: product.published ? 'active' : 'draft',
       migration_status: 'ready'
