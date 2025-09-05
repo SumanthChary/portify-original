@@ -127,12 +127,12 @@ const SimpleMigration = () => {
           source_platform: 'gumroad',
           destination_platform: 'payhip',
           status: 'in_progress',
-          products_data: selectedProductsArray,
+          products_data: selectedProductsArray as any,
           credentials: {
             gumroad_api_key: credentials.gumroadApiKey,
             payhip_email: credentials.payhipEmail,
             payhip_password: credentials.payhipPassword
-          }
+          } as any
         });
 
       if (dbError) {

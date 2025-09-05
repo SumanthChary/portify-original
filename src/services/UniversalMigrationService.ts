@@ -266,8 +266,13 @@ class UniversalMigrationService {
     return btoa(JSON.stringify(credentials));
   }
 
-  private decryptCredentials(encryptedCredentials: string): Record<string, PlatformCredentials> {
-    return JSON.parse(atob(encryptedCredentials));
+  private decryptCredentials(credentialsData: any): Record<string, PlatformCredentials> {
+    // Handle both old string format and new JSONB format
+    if (typeof credentialsData === 'string') {
+      return JSON.parse(atob(credentialsData));
+    }
+    // New JSONB format - return directly
+    return credentialsData || {};
   }
 
   async getMigrationSession(sessionId: string): Promise<MigrationSession | null> {

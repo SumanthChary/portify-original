@@ -56,9 +56,10 @@ export type Database = {
         Row: {
           completed_at: string | null
           created_at: string
-          credentials: string
+          credentials: Json | null
           destination_platform: string
           id: string
+          products_data: Json | null
           session_id: string
           source_platform: string
           status: string
@@ -68,9 +69,10 @@ export type Database = {
         Insert: {
           completed_at?: string | null
           created_at?: string
-          credentials: string
+          credentials?: Json | null
           destination_platform: string
           id?: string
+          products_data?: Json | null
           session_id: string
           source_platform: string
           status?: string
@@ -80,9 +82,10 @@ export type Database = {
         Update: {
           completed_at?: string | null
           created_at?: string
-          credentials?: string
+          credentials?: Json | null
           destination_platform?: string
           id?: string
+          products_data?: Json | null
           session_id?: string
           source_platform?: string
           status?: string
