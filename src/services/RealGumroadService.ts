@@ -98,24 +98,34 @@ export class RealGumroadService {
     }
 
     // Store extracted products
-    const universalProducts = products.map(product => ({
-      session_id: sessionId,
-      source_product_id: product.id,
-      source_platform: sourcePlatform,
-      title: product.name,
-      description: product.description || '',
-      price: product.price,
-      images: JSON.stringify([
+    const universalProducts = products.map(product => {
+      const images = [
         ...(product.thumbnail_url ? [product.thumbnail_url] : []),
         ...(product.preview_url ? [product.preview_url] : [])
-      ]),
-      files: JSON.stringify(product.file_info || []),
-      variants: JSON.stringify([]),
-      tags: Array.isArray(product.tags) ? product.tags : (typeof product.tags === 'string' ? product.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []),
-      category: product.product_type || 'digital',
-      status: product.published ? 'active' : 'draft',
-      migration_status: 'ready'
-    }));
+      ];
+
+      const files = Array.isArray(product.file_info)
+        ? product.file_info
+        : (product.file_info ? [product.file_info] : []);
+
+      const variants: any[] = [];
+
+      return {
+        session_id: sessionId,
+        source_product_id: product.id,
+        source_platform: sourcePlatform,
+        title: product.name,
+        description: product.description || '',
+        price: product.price,
+        images,
+        files,
+        variants,
+        tags: Array.isArray(product.tags) ? product.tags : (typeof product.tags === 'string' ? product.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []),
+        category: product.product_type || 'digital',
+        status: product.published ? 'active' : 'draft',
+        migration_status: 'ready'
+      };
+    });
 
     const { error: productsError } = await supabase
       .from('universal_products')
