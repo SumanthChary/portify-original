@@ -22,6 +22,8 @@ import {
   Minimize2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
+import PostPaymentGuide from '@/components/PostPaymentGuide';
 
 interface AutomationCommand {
   id: string;
@@ -40,7 +42,11 @@ interface ConnectionStatus {
 }
 
 export default function LiveAutomation() {
-  const [sessionId, setSessionId] = useState('');
+  const [searchParams] = useSearchParams();
+  const [sessionId, setSessionId] = useState(searchParams.get('session') || '');
+  const [showPaymentGuide, setShowPaymentGuide] = useState(
+    searchParams.get('payment_success') === 'true' || searchParams.get('bypass') === 'true'
+  );
   const [connection, setConnection] = useState<ConnectionStatus>({
     isConnected: false,
     sessionId: null,
@@ -339,6 +345,22 @@ export default function LiveAutomation() {
     setCurrentAction('Disconnected');
     toast.info('Disconnected from extension');
   };
+
+  // Show payment guide if user just completed payment
+  if (showPaymentGuide) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 p-4">
+        <div className="max-w-7xl mx-auto py-8">
+          <PostPaymentGuide 
+            onProceedToAutomation={() => {
+              setShowPaymentGuide(false);
+              toast.success('Welcome to Live Automation! Install the extension to continue.');
+            }} 
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 p-4">

@@ -108,9 +108,7 @@ const Payment = () => {
 
       // Redirect to PayPal Checkout
       if (data.url) {
-        window.open(data.url, '_blank');
-        
-        // Update local storage with payment info
+        // Update local storage with payment info BEFORE redirect
         const processedData = {
           ...migrationData,
           paymentInitiated: true,
@@ -119,6 +117,11 @@ const Payment = () => {
         };
         
         localStorage.setItem('migrationData', JSON.stringify(processedData));
+        
+        // Redirect to PayPal and then back to our success page
+        window.location.href = data.url + '&return_url=' + encodeURIComponent(
+          window.location.origin + '/live-automation?payment_success=true&session=' + migrationData.sessionId
+        );
         
         toast.success('Redirecting to PayPal payment...');
       } else {
