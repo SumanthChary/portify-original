@@ -15,15 +15,18 @@ export interface GumroadProduct {
 }
 
 class GumroadService {
-  private readonly apiKey = "1_hFYYKL2sfvDhXZtxF81xcgbwmSTTepvXo8anbdSO8";
   private readonly baseUrl = "https://api.gumroad.com/v2";
 
-  async getProducts(): Promise<GumroadProduct[]> {
+  async getProducts(apiKey: string): Promise<GumroadProduct[]> {
+    if (!apiKey) {
+      throw new Error('Gumroad API key is required');
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/products`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });
@@ -70,12 +73,16 @@ class GumroadService {
     }
   }
 
-  async getProduct(productId: string): Promise<GumroadProduct | null> {
+  async getProduct(productId: string, apiKey: string): Promise<GumroadProduct | null> {
+    if (!apiKey) {
+      throw new Error('Gumroad API key is required');
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/products/${productId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
       });

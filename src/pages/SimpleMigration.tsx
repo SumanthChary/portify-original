@@ -52,42 +52,40 @@ const SimpleMigration = () => {
   const connectAccounts = async () => {
     setIsLoading(true);
     try {
-      // Validate Gumroad API Key
-      const gumroadResponse = await fetch(`https://api.gumroad.com/v2/user`, {
-        headers: {
-          'Authorization': `Bearer ${credentials.gumroadApiKey}`
+      // Validate Gumroad API Key using edge function
+      const validateResponse = await supabase.functions.invoke('gumroad-migration', {
+        body: {
+          action: 'validate-api-key',
+          credentials: { gumroadApiKey: credentials.gumroadApiKey }
         }
       });
       
-      if (!gumroadResponse.ok) {
+      if (validateResponse.error) {
+        throw new Error('Failed to validate API key');
+      }
+
+      if (!validateResponse.data?.valid) {
         throw new Error('Invalid Gumroad API key');
       }
 
-      // Fetch products from Gumroad
-      const productsResponse = await fetch(`https://api.gumroad.com/v2/products`, {
-        headers: {
-          'Authorization': `Bearer ${credentials.gumroadApiKey}`
+      // Fetch products from Gumroad using edge function
+      const productsResponse = await supabase.functions.invoke('gumroad-migration', {
+        body: {
+          action: 'fetch-products',
+          credentials: { gumroadApiKey: credentials.gumroadApiKey }
         }
       });
       
-      if (!productsResponse.ok) {
+      if (productsResponse.error) {
         throw new Error('Failed to fetch products');
       }
 
-      const data = await productsResponse.json();
-      const fetchedProducts = data.products.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description || '',
-        price: p.price / 100, // Convert cents to dollars
-        url: p.url,
-        image: p.preview_url
-      }));
-
+      const fetchedProducts = productsResponse.data?.products || [];
       setProducts(fetchedProducts);
       setStep(3);
       toast.success('Accounts connected successfully!');
     } catch (error: any) {
+      console.error('Connection error:', error);
       toast.error(error.message || 'Failed to connect accounts');
     } finally {
       setIsLoading(false);
@@ -140,8 +138,9 @@ const SimpleMigration = () => {
       }
 
       // Call the migration edge function
-      const { error: migrationError } = await supabase.functions.invoke('gumroad-migration', {
+      const migrationResponse = await supabase.functions.invoke('gumroad-migration', {
         body: {
+          action: 'migrate-products',
           sessionId,
           products: selectedProductsArray,
           credentials: {
@@ -152,8 +151,12 @@ const SimpleMigration = () => {
         }
       });
 
-      if (migrationError) {
-        throw migrationError;
+      if (migrationResponse.error) {
+        throw new Error(migrationResponse.error.message || 'Migration failed');
+      }
+
+      if (!migrationResponse.data?.success) {
+        throw new Error('Migration was not successful');
       }
 
       setMigrationStatus('completed');

@@ -80,17 +80,11 @@ export const EnhancedMigrationDashboard = () => {
 
   const fetchGumroadProducts = async () => {
     try {
-      toast.loading("📦 Fetching Gumroad products...");
-      const products = await gumroadService.getProducts();
-      setGumroadProducts(products);
-      toast.success(`✅ Found ${products.length} Gumroad products`);
+      toast.info("📦 Please use the Simple Migration flow to connect and fetch Gumroad products");
+      // Products are now fetched through the SimpleMigration flow with user-provided API keys
     } catch (error) {
       console.error("Failed to fetch Gumroad products:", error);
-      if (error instanceof Error) {
-        toast.error(`❌ Failed to fetch Gumroad products: ${error.message}`);
-      } else {
-        toast.error("❌ Failed to fetch Gumroad products");
-      }
+      toast.error("❌ Please use the Simple Migration flow to connect your Gumroad account");
     }
   };
 

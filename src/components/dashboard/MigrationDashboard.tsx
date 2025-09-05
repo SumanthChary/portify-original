@@ -17,17 +17,19 @@ const MigrationDashboard = () => {
   const [isWebhookTested, setIsWebhookTested] = useState(false);
 
   useEffect(() => {
-    fetchGumroadProducts();
+    // Products are now fetched through the SimpleMigration flow with user-provided API keys
+    // No default connection test since API keys are user-provided
   }, []);
 
   const fetchGumroadProducts = async () => {
     setIsLoading(true);
     try {
-      const fetchedProducts = await gumroadService.getProducts();
-      setProducts(fetchedProducts);
+      // This function is now only called from the SimpleMigration flow
+      // with proper user credentials via edge functions
+      toast.info("Please use the Simple Migration flow to connect your Gumroad account");
     } catch (error) {
       console.error("Failed to fetch products:", error);
-      toast.error("Failed to fetch your Gumroad products. Please try again.");
+      toast.error("Failed to fetch your Gumroad products. Please use the Simple Migration flow.");
     } finally {
       setIsLoading(false);
     }

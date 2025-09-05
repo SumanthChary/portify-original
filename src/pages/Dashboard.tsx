@@ -16,33 +16,22 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Test Gumroad connection by trying to fetch products
-    const testGumroadConnection = async () => {
-      try {
-        await gumroadService.getProducts();
-        setIsGumroadConnected(true);
-      } catch (error) {
-        console.log('Gumroad connection test failed:', error);
-        setIsGumroadConnected(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    testGumroadConnection();
+    // Connection testing is now done through the SimpleMigration flow
+    // with user-provided API keys
+    setIsLoading(false);
   }, []);
 
   const handleTestConnection = async () => {
     setIsLoading(true);
-    toast.loading("Testing Gumroad connection...");
+    toast.info("Please use the Simple Migration page to test your Gumroad connection with your API key");
     
     try {
-      await gumroadService.getProducts();
-      setIsGumroadConnected(true);
-      toast.success("Successfully connected to Gumroad!");
+      // Redirect users to the simple migration flow for proper connection testing
+      setIsGumroadConnected(false);
+      toast.info("Use the Simple Migration flow to connect with your Gumroad API key");
     } catch (error) {
       setIsGumroadConnected(false);
-      toast.error("Failed to connect to Gumroad. Please check your API configuration.");
+      toast.error("Please provide your Gumroad API key in the Simple Migration flow");
     } finally {
       setIsLoading(false);
     }

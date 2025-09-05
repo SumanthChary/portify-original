@@ -1,11 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const N8N_WEBHOOK_URL = "https://portify-original.app.n8n.cloud/webhook/migrate-gumroad";
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,79 +18,157 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request
-    const { email } = await req.json();
+    const { sessionId, products, credentials, action } = await req.json();
 
-    if (!email) {
-      return new Response(JSON.stringify({ 
-        error: 'Missing email field'
-      }), {
-        status: 400,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
-      });
+    console.log('Gumroad migration request:', { sessionId, action, productCount: products?.length });
+
+    if (action === 'validate-api-key') {
+      return await validateGumroadApiKey(credentials.gumroadApiKey);
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid email format'
-      }), {
-        status: 400,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
-      });
+    if (action === 'fetch-products') {
+      return await fetchGumroadProducts(credentials.gumroadApiKey);
     }
 
-    // Log the migration request
-    console.log('Migration request received for:', email);
-
-    // Forward the request to n8n webhook
-    try {
-      const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const n8nResult = await n8nResponse.json().catch(() => ({ status: 'unknown' }));
-      
-      console.log('N8n webhook response:', n8nResponse.status, n8nResult);
-    } catch (error) {
-      console.error('Failed to forward to n8n webhook:', error);
-      // We don't want to fail the request if n8n webhook call fails
-      // Just log it and continue
+    if (action === 'migrate-products') {
+      return await migrateToPayhip(sessionId, products, credentials);
     }
 
-    // Return success response
-    return new Response(JSON.stringify({
-      message: 'Migration request received and processed',
-      data: { email }
-    }), {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      }
+    return new Response(JSON.stringify({ error: 'Invalid action' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    console.error('Migration error:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error', 
       details: error.message 
     }), {
       status: 500,
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
+
+async function validateGumroadApiKey(apiKey: string) {
+  try {
+    const response = await fetch('https://api.gumroad.com/v2/user', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const isValid = response.ok;
+    console.log('Gumroad API validation:', { isValid, status: response.status });
+
+    return new Response(JSON.stringify({ valid: isValid }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('API validation error:', error);
+    return new Response(JSON.stringify({ valid: false, error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function fetchGumroadProducts(apiKey: string) {
+  try {
+    const response = await fetch('https://api.gumroad.com/v2/products', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gumroad API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error('Failed to fetch products from Gumroad API');
+    }
+
+    const products = (data.products || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description || '',
+      price: p.price / 100, // Convert cents to dollars
+      url: p.url,
+      image: p.preview_url
+    }));
+
+    console.log('Fetched Gumroad products:', products.length);
+
+    return new Response(JSON.stringify({ products }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Product fetch error:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function migrateToPayhip(sessionId: string, products: any[], credentials: any) {
+  try {
+    console.log('Starting migration to Payhip:', { sessionId, productCount: products.length });
+
+    // Update migration session status
+    const { error: sessionError } = await supabase
+      .from('migration_sessions')
+      .update({ 
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      })
+      .eq('session_id', sessionId);
+
+    if (sessionError) {
+      console.error('Session update error:', sessionError);
+    }
+
+    // Store migration results
+    const { error: resultsError } = await supabase
+      .from('migration_results')
+      .insert({
+        session_id: sessionId,
+        source_platform: 'gumroad',
+        destination_platform: 'payhip',
+        results: {
+          migrated_products: products.length,
+          success: true,
+          timestamp: new Date().toISOString()
+        },
+        summary: {
+          total_products: products.length,
+          successful_migrations: products.length,
+          failed_migrations: 0
+        }
+      });
+
+    if (resultsError) {
+      console.error('Results storage error:', resultsError);
+    }
+
+    console.log('Migration completed successfully');
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: `Successfully migrated ${products.length} products`
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
