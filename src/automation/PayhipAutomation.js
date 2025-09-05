@@ -1,23 +1,24 @@
 import { chromium } from 'playwright';
 import { promises as fs } from 'fs';
 
+// Use environment variables for secure credentials
 const PAYHIP_CONFIG = {
   credentials: {
-    email: 'enjoywithpandu@gmail.com',
-    password: 'phc@12345'
+    email: process.env.PAYHIP_EMAIL || 'enjoywithpandu@gmail.com',
+    password: process.env.PAYHIP_PASSWORD || 'phc@12345'
   },
   selectors: {
     login: {
-      emailInput: '#email',
-      passwordInput: '#password',
-      submitButton: 'button[type="submit"]'
+      emailInput: ['#email', 'input[name="email"]', '[data-testid="email"]'],
+      passwordInput: ['#password', 'input[name="password"]', '[data-testid="password"]'],
+      submitButton: ['button[type="submit"]', '.btn-primary', '[data-testid="login"]']
     },
     product: {
-      nameInput: '#product_name',
-      descriptionInput: '#product_description',
-      priceInput: '#product_price',
-      fileInput: '#product_file',
-      submitButton: 'button[type="submit"]'
+      nameInput: ['#product_name', 'input[name="name"]', '[data-testid="product-name"]'],
+      descriptionInput: ['#product_description', 'textarea[name="description"]', '[data-testid="description"]'],
+      priceInput: ['#product_price', 'input[name="price"]', '[data-testid="price"]'],
+      fileInput: ['#product_file', 'input[type="file"]', '[data-testid="file-upload"]'],
+      submitButton: ['button[type="submit"]', '.btn-publish', '[data-testid="submit"]']
     }
   },
   urls: {
@@ -25,9 +26,10 @@ const PAYHIP_CONFIG = {
     newProduct: 'https://payhip.com/products/new'
   },
   delays: {
-    typing: 1500,
+    typing: 800,
     navigation: 2000,
-    upload: 5000
+    upload: 5000,
+    retry: 1000
   }
 };
 
@@ -51,10 +53,29 @@ class PayhipAutomation {
     this.page = await this.context.newPage();
   }
 
-  async close() {
-    if (this.browser) {
-      await this.browser.close();
+  async tryMultipleSelectors(selectors, action = 'find') {
+    for (const selector of selectors) {
+      try {
+        const element = await this.page.$(selector);
+        if (element) {
+          return { element, selector };
+        }
+      } catch (e) {
+        continue;
+      }
     }
+    throw new Error(`None of the selectors found: ${selectors.join(', ')}`);
+  }
+
+  async fillFieldSafely(selectors, value) {
+    const { element, selector } = await this.tryMultipleSelectors(selectors);
+    await this.page.fill(selector, value);
+    await this.page.waitForTimeout(PAYHIP_CONFIG.delays.typing);
+  }
+
+  async clickSafely(selectors) {
+    const { selector } = await this.tryMultipleSelectors(selectors);
+    await this.page.click(selector);
   }
 
   async loadCookies() {
@@ -77,19 +98,26 @@ class PayhipAutomation {
     await this.page.goto(PAYHIP_CONFIG.urls.login);
     await this.page.waitForTimeout(PAYHIP_CONFIG.delays.navigation);
 
-    const loginForm = await this.page.$(PAYHIP_CONFIG.selectors.login.emailInput);
-    if (loginForm) {
+    try {
       console.log('Logging in to Payhip...');
-      await this.page.fill(PAYHIP_CONFIG.selectors.login.emailInput, PAYHIP_CONFIG.credentials.email);
-      await this.page.waitForTimeout(PAYHIP_CONFIG.delays.typing);
+      await this.fillFieldSafely(
+        PAYHIP_CONFIG.selectors.login.emailInput, 
+        PAYHIP_CONFIG.credentials.email
+      );
       
-      await this.page.fill(PAYHIP_CONFIG.selectors.login.passwordInput, PAYHIP_CONFIG.credentials.password);
-      await this.page.waitForTimeout(PAYHIP_CONFIG.delays.typing);
+      await this.fillFieldSafely(
+        PAYHIP_CONFIG.selectors.login.passwordInput, 
+        PAYHIP_CONFIG.credentials.password
+      );
       
-      await this.page.click(PAYHIP_CONFIG.selectors.login.submitButton);
-      await this.page.waitForNavigation();
+      await this.clickSafely(PAYHIP_CONFIG.selectors.login.submitButton);
+      await this.page.waitForNavigation({ timeout: 10000 });
       
       await this.saveCookies();
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
     }
   }
 
@@ -97,31 +125,42 @@ class PayhipAutomation {
     try {
       await this.init();
       await this.loadCookies();
-      await this.login();
+      
+      const loginSuccess = await this.login();
+      if (!loginSuccess) {
+        throw new Error('Failed to login to Payhip');
+      }
 
       console.log('Navigating to new product page...');
       await this.page.goto(PAYHIP_CONFIG.urls.newProduct);
       await this.page.waitForTimeout(PAYHIP_CONFIG.delays.navigation);
 
       console.log('Filling product details...');
-      await this.page.fill(PAYHIP_CONFIG.selectors.product.nameInput, productData.title);
-      await this.page.waitForTimeout(PAYHIP_CONFIG.delays.typing);
+      await this.fillFieldSafely(
+        PAYHIP_CONFIG.selectors.product.nameInput, 
+        productData.title
+      );
 
-      await this.page.fill(PAYHIP_CONFIG.selectors.product.descriptionInput, productData.description);
-      await this.page.waitForTimeout(PAYHIP_CONFIG.delays.typing);
+      await this.fillFieldSafely(
+        PAYHIP_CONFIG.selectors.product.descriptionInput, 
+        productData.description
+      );
 
-      await this.page.fill(PAYHIP_CONFIG.selectors.product.priceInput, productData.price.toString());
-      await this.page.waitForTimeout(PAYHIP_CONFIG.delays.typing);
+      await this.fillFieldSafely(
+        PAYHIP_CONFIG.selectors.product.priceInput, 
+        productData.price.toString()
+      );
 
       if (productData.file_path) {
         console.log('Uploading product file...');
-        await this.page.setInputFiles(PAYHIP_CONFIG.selectors.product.fileInput, productData.file_path);
+        const { selector } = await this.tryMultipleSelectors(PAYHIP_CONFIG.selectors.product.fileInput);
+        await this.page.setInputFiles(selector, productData.file_path);
         await this.page.waitForTimeout(PAYHIP_CONFIG.delays.upload);
       }
 
       console.log('Submitting product...');
-      await this.page.click(PAYHIP_CONFIG.selectors.product.submitButton);
-      await this.page.waitForNavigation();
+      await this.clickSafely(PAYHIP_CONFIG.selectors.product.submitButton);
+      await this.page.waitForNavigation({ timeout: 15000 });
 
       return { success: true, message: 'Product uploaded successfully' };
     } catch (error) {
@@ -129,6 +168,12 @@ class PayhipAutomation {
       return { success: false, message: error.message };
     } finally {
       await this.close();
+    }
+  }
+
+  async close() {
+    if (this.browser) {
+      await this.browser.close();
     }
   }
 }

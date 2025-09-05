@@ -120,6 +120,22 @@ async function migrateToPayhip(sessionId: string, products: any[], credentials: 
   try {
     console.log('Starting migration to Payhip:', { sessionId, productCount: products.length });
 
+    // Use the new Payhip automation service
+    const payhipResponse = await supabase.functions.invoke('payhip-automation', {
+      body: {
+        action: 'migrate-product',
+        products,
+        credentials: {
+          email: credentials.payhipEmail,
+          password: credentials.payhipPassword
+        }
+      }
+    });
+
+    if (payhipResponse.error) {
+      throw new Error(`Payhip migration failed: ${payhipResponse.error.message}`);
+    }
+
     // Update migration session status
     const { error: sessionError } = await supabase
       .from('migration_sessions')
@@ -143,7 +159,8 @@ async function migrateToPayhip(sessionId: string, products: any[], credentials: 
         results: {
           migrated_products: products.length,
           success: true,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          payhip_response: payhipResponse.data
         },
         summary: {
           total_products: products.length,
@@ -160,7 +177,8 @@ async function migrateToPayhip(sessionId: string, products: any[], credentials: 
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: `Successfully migrated ${products.length} products`
+      message: `Successfully migrated ${products.length} products to Payhip`,
+      payhip_details: payhipResponse.data
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

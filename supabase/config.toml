@@ -43,6 +43,9 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+[functions.payhip-automation]
+verify_jwt = false
+
 [functions.gumroad-migration]
 verify_jwt = false
 

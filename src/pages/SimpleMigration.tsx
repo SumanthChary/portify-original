@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShoppingBag, ArrowRight, Check, Link } from 'lucide-react';
 import { toast } from 'sonner';
+import { payhipService } from '@/services/PayhipService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Product {
@@ -61,11 +62,21 @@ const SimpleMigration = () => {
       });
       
       if (validateResponse.error) {
-        throw new Error('Failed to validate API key');
+        throw new Error('Failed to validate Gumroad API key');
       }
 
       if (!validateResponse.data?.valid) {
         throw new Error('Invalid Gumroad API key');
+      }
+
+      // Validate Payhip credentials using new service
+      const payhipValid = await payhipService.validateCredentials({
+        email: credentials.payhipEmail,
+        password: credentials.payhipPassword
+      });
+
+      if (!payhipValid) {
+        throw new Error('Invalid Payhip credentials');
       }
 
       // Fetch products from Gumroad using edge function
@@ -83,7 +94,7 @@ const SimpleMigration = () => {
       const fetchedProducts = productsResponse.data?.products || [];
       setProducts(fetchedProducts);
       setStep(3);
-      toast.success('Accounts connected successfully!');
+      toast.success(`Successfully connected! Found ${fetchedProducts.length} products.`);
     } catch (error: any) {
       console.error('Connection error:', error);
       toast.error(error.message || 'Failed to connect accounts');
