@@ -224,35 +224,36 @@ const MigrationWizard = () => {
     try {
       const productsToMigrate = extractedProducts.filter(p => selectedProducts.includes(p.id));
       
+      // Store migration data for LiveAutomation page
+      const migrationData = {
+        sessionId,
+        products: productsToMigrate,
+        sourcePlatform: selectedPlatform,
+        destinationPlatform: 'payhip',
+        useZapier,
+        zapierWebhookUrl
+      };
+      
+      localStorage.setItem('migrationData', JSON.stringify(migrationData));
+      
       if (useZapier && zapierWebhookUrl) {
         // Use Zapier orchestration
-        const response = await fetch(zapierWebhookUrl, {
+        await fetch(zapierWebhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           mode: "no-cors",
           body: JSON.stringify({
-            sessionId,
-            products: productsToMigrate,
-            sourcePlatform: selectedPlatform,
-            destinationPlatform: 'payhip',
+            ...migrationData,
             timestamp: new Date().toISOString()
           }),
         });
         
         toast.success("Migration started via Zapier!");
       } else {
-        // Direct migration
-        const { data, error } = await supabase.functions.invoke('payhip-automation', {
-          body: {
-            sessionId,
-            products: productsToMigrate,
-            sourcePlatform: selectedPlatform,
-            destinationPlatform: 'payhip'
-          }
-        });
-
-        if (error) throw error;
-        toast.success("Migration completed successfully!");
+        // Direct browser automation - redirect to LiveAutomation
+        toast.success("Ready for browser automation!");
+        navigate(`/live-automation?session=${sessionId}&products=${productsToMigrate.length}`);
+        return;
       }
     } catch (error) {
       console.error('Migration error:', error);

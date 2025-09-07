@@ -14,9 +14,8 @@ const Header = () => {
 
   const navigationItems = [
     { path: "/", label: "Home" },
-    { path: "/migrate", label: "Migration Wizard" },
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/migrated-products", label: "Products" },
+            { path: "/wizard", label: "Migration Wizard" },
+            { path: "/live-automation", label: "Live Automation" },
   ];
 
   const closeMenu = () => setIsMenuOpen(false);
@@ -62,7 +61,7 @@ const Header = () => {
             {user ? (
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-coolGray">Welcome, {user.email}</span>
-                <Link to="/migrate">
+                <Link to="/wizard">
                   <Button className="bg-cta-gradient hover:opacity-90 text-white shadow-lg">
                     Start Migration
                   </Button>
@@ -75,7 +74,7 @@ const Header = () => {
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/migrate">
+                <Link to="/wizard">
                   <Button className="bg-cta-gradient hover:opacity-90 text-white shadow-lg">
                     Try Free Migration
                   </Button>
@@ -124,7 +123,7 @@ const Header = () => {
                     <div className="px-4 py-2 text-sm text-coolGray">
                       Welcome, {user.email}
                     </div>
-                    <Link to="/migrate" onClick={closeMenu}>
+                    <Link to="/wizard" onClick={closeMenu}>
                       <Button className="w-full bg-cta-gradient hover:opacity-90 text-white shadow-lg">
                         Start Migration
                       </Button>
@@ -137,7 +136,7 @@ const Header = () => {
                         Sign In
                       </Button>
                     </Link>
-                    <Link to="/migrate" onClick={closeMenu}>
+                    <Link to="/wizard" onClick={closeMenu}>
                       <Button className="w-full bg-cta-gradient hover:opacity-90 text-white shadow-lg">
                         Try Free Migration
                       </Button>

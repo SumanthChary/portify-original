@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -112,55 +113,148 @@ export default function LiveAutomation() {
         }
       };
 
-      // Handle data channel from extension
-      peerConnection.ondatachannel = (event) => {
-        const dataChannel = event.channel;
-        dataChannelRef.current = dataChannel;
-        
-        dataChannel.onopen = () => {
-          setConnection(prev => ({
-            ...prev,
-            isConnected: true,
-            sessionId,
-            peerConnection,
-            dataChannel
-          }));
-          setCurrentAction('Connected - Ready for automation');
-          toast.success('Connected to browser extension!');
-        };
-
-        dataChannel.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          handleExtensionMessage(message);
-        };
-
-        dataChannel.onclose = () => {
-          setConnection(prev => ({
-            ...prev,
-            isConnected: false
-          }));
-          setCurrentAction('Disconnected from extension');
-          toast.error('Connection lost');
-        };
+      // Handle ICE candidates
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate && offerSdp) {
+          console.log('New ICE candidate:', event.candidate);
+        }
       };
 
-      // Create offer and send to extension via signaling server
+      // Create offer for manual signaling
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
-
-      // In a real implementation, this would connect to the extension via WebRTC signaling
-      // For now, we'll simulate the connection for demo purposes
-      setCurrentAction('Establishing WebRTC connection...');
       
-      // Simulate successful connection after 2 seconds
-      setTimeout(() => {
-        simulateExtensionConnection(peerConnection);
-      }, 2000);
+      // Display offer SDP for manual copying
+      setOfferSdp(JSON.stringify(offer, null, 2));
+      setCurrentAction('WebRTC Offer created - Copy to extension');
+      
+      toast.info('Copy the WebRTC offer to your browser extension');
 
     } catch (error) {
       console.error('Connection failed:', error);
-      toast.error('Failed to connect to extension');
+      toast.error('Failed to create WebRTC offer');
       setCurrentAction('Connection failed');
+    }
+  };
+
+  const handleAnswerSdp = async () => {
+    if (!answerSdp.trim() || !peerConnectionRef.current) {
+      toast.error('Please paste the answer SDP from the extension');
+      return;
+    }
+
+    try {
+      const answer = JSON.parse(answerSdp);
+      await peerConnectionRef.current.setRemoteDescription(answer);
+      
+      // Create data channel
+      const dataChannel = peerConnectionRef.current.createDataChannel('automation', {
+        ordered: true
+      });
+      
+      dataChannelRef.current = dataChannel;
+      
+      dataChannel.onopen = () => {
+        setConnection(prev => ({
+          ...prev,
+          isConnected: true,
+          sessionId,
+          peerConnection: peerConnectionRef.current!,
+          dataChannel
+        }));
+        setCurrentAction('Connected - Ready for automation');
+        toast.success('Connected to browser extension!');
+      };
+
+      dataChannel.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        handleExtensionMessage(message);
+      };
+
+      dataChannel.onclose = () => {
+        setConnection(prev => ({
+          ...prev,
+          isConnected: false
+        }));
+        setCurrentAction('Disconnected from extension');
+        toast.error('Connection lost');
+      };
+
+      setCurrentAction('Processing answer...');
+      
+    } catch (error) {
+      console.error('Failed to process answer:', error);
+      toast.error('Invalid answer SDP format');
+    }
+  };
+
+  const startRealMigration = async () => {
+    if (!connection.isConnected) {
+      toast.error('Please connect to the browser extension first');
+      return;
+    }
+
+    // Get migration data from URL params or storage
+    const migrationData = JSON.parse(localStorage.getItem('migrationData') || '{}');
+    const productsToMigrate = migrationData.products || [];
+    
+    if (productsToMigrate.length === 0) {
+      toast.error('No products found to migrate');
+      return;
+    }
+
+    setIsAutomating(true);
+    setProgress(0);
+
+    try {
+      setCurrentAction('Starting migration process...');
+      
+      // Step 1: Navigate to Payhip
+      sendCommand({
+        type: 'NAVIGATE',
+        data: { url: 'https://payhip.com/login' }
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      setProgress(20);
+
+      // Step 2: Check if already logged in or need to login
+      sendCommand({
+        type: 'GET_PAGE_INFO',
+        data: {}
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setProgress(30);
+
+      // Step 3: Migrate each product
+      for (let i = 0; i < productsToMigrate.length; i++) {
+        const product = productsToMigrate[i];
+        setCurrentAction(`Creating product: ${product.title}`);
+        
+        sendCommand({
+          type: 'CREATE_PAYHIP_PRODUCT',
+          data: {
+            title: product.title,
+            description: product.description,
+            price: product.price,
+            images: product.images || []
+          }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        setProgress(30 + (i + 1) / productsToMigrate.length * 60);
+      }
+
+      setCurrentAction('Migration completed successfully!');
+      setProgress(100);
+      toast.success(`Successfully migrated ${productsToMigrate.length} products!`);
+      
+    } catch (error) {
+      console.error('Migration error:', error);
+      toast.error('Migration failed. Please try again.');
+    } finally {
+      setIsAutomating(false);
     }
   };
 
@@ -261,63 +355,14 @@ export default function LiveAutomation() {
     );
   };
 
-  const startGumroadToPayhipMigration = async () => {
-    if (!connection.isConnected) {
-      toast.error('Please connect to the browser extension first');
-      return;
-    }
+  const copyOffer = () => {
+    navigator.clipboard.writeText(offerSdp);
+    toast.success('WebRTC Offer copied to clipboard');
+  };
 
-    setIsAutomating(true);
-    setProgress(0);
-
-    const migrationSteps = [
-      {
-        type: 'NAVIGATE',
-        data: { url: 'https://gumroad.com/login' }
-      },
-      {
-        type: 'LOGIN',
-        data: {
-          credentials: {
-            email: 'your-gumroad-email@example.com',
-            password: 'your-password'
-          },
-          platform: 'gumroad'
-        }
-      },
-      {
-        type: 'NAVIGATE',
-        data: { url: 'https://gumroad.com/products' }
-      },
-      {
-        type: 'EXTRACT_PRODUCTS',
-        data: {}
-      },
-      {
-        type: 'NAVIGATE',
-        data: { url: 'https://payhip.com/login' }
-      },
-      {
-        type: 'LOGIN',
-        data: {
-          credentials: {
-            email: 'enjoywithpandu@gmail.com',
-            password: 'phc@12345'
-          },
-          platform: 'payhip'
-        }
-      }
-    ];
-
-    for (let i = 0; i < migrationSteps.length; i++) {
-      const step = migrationSteps[i];
-      sendCommand(step);
-      setProgress((i + 1) / migrationSteps.length * 100);
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait between steps
-    }
-
-    setIsAutomating(false);
-    toast.success('Migration automation completed!');
+  const copySessionId = () => {
+    navigator.clipboard.writeText(sessionId);
+    toast.success('Session ID copied to clipboard');
   };
 
   const stopAutomation = () => {
@@ -326,11 +371,6 @@ export default function LiveAutomation() {
     setAutomationQueue([]);
     setCurrentAction('Automation stopped');
     toast.info('Automation stopped');
-  };
-
-  const copySessionId = () => {
-    navigator.clipboard.writeText(sessionId);
-    toast.success('Session ID copied to clipboard');
   };
 
   const disconnect = () => {
@@ -389,23 +429,64 @@ export default function LiveAutomation() {
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Step 1:</strong> Install the Portify browser extension and click "Connect to Web App"
+                    <strong>Step 1:</strong> Install the Portify browser extension
                     <br />
-                    <strong>Step 2:</strong> Copy the session ID from the extension and paste it below
+                    <strong>Step 2:</strong> Enter a session ID and create WebRTC offer
+                    <br />
+                    <strong>Step 3:</strong> Copy offer to extension and paste answer back
                   </AlertDescription>
                 </Alert>
                 
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter session ID from extension..."
-                    value={sessionId}
-                    onChange={(e) => setSessionId(e.target.value)}
-                    className="font-mono"
-                  />
-                  <Button onClick={connectToExtension} disabled={!sessionId.trim()}>
-                    <Wifi className="h-4 w-4 mr-2" />
-                    Connect
-                  </Button>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter session ID (any unique string)..."
+                      value={sessionId}
+                      onChange={(e) => setSessionId(e.target.value)}
+                      className="font-mono"
+                    />
+                    <Button onClick={connectToExtension} disabled={!sessionId.trim()}>
+                      <Wifi className="h-4 w-4 mr-2" />
+                      Create Offer
+                    </Button>
+                  </div>
+                  
+                  {offerSdp && (
+                    <>
+                      <div>
+                        <Label>WebRTC Offer (Copy to Extension):</Label>
+                        <div className="flex gap-2 mt-1">
+                          <textarea 
+                            readOnly 
+                            value={offerSdp} 
+                            className="flex-1 p-2 border rounded font-mono text-xs resize-none h-32"
+                          />
+                          <Button size="sm" onClick={copyOffer}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label>Extension Answer (Paste from Extension):</Label>
+                        <div className="flex gap-2 mt-1">
+                          <textarea 
+                            placeholder="Paste answer SDP from extension here..."
+                            value={answerSdp}
+                            onChange={(e) => setAnswerSdp(e.target.value)}
+                            className="flex-1 p-2 border rounded font-mono text-xs resize-none h-32"
+                          />
+                          <Button 
+                            size="sm" 
+                            onClick={handleAnswerSdp}
+                            disabled={!answerSdp.trim()}
+                          >
+                            Connect
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             ) : (
@@ -523,7 +604,7 @@ export default function LiveAutomation() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    onClick={startGumroadToPayhipMigration}
+                    onClick={startRealMigration}
                     disabled={!connection.isConnected || isAutomating}
                     className="w-full"
                   >

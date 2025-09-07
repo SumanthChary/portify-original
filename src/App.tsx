@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import MigrationWizard from "./pages/MigrationWizard";
 import Dashboard from "./pages/Dashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
 import MigratedProducts from "./pages/MigratedProducts";
@@ -20,7 +21,6 @@ import SelectProducts from "./pages/SelectProducts";
 import Payment from "./pages/Payment";
 import LiveAutomation from "./pages/LiveAutomation";
 import SimpleMigration from "./pages/SimpleMigration";
-import MigrationWizard from "./pages/MigrationWizard";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -33,7 +33,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/wizard" element={<MigrationWizard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
             <Route path="/migrated-products" element={<MigratedProducts />} />

@@ -107,11 +107,26 @@ class PortifyAutomation {
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
     
-    // Send answer back to background script
+    // Display answer for manual copying
+    const answerJson = JSON.stringify(answer, null, 2);
+    console.log('WebRTC Answer (copy this to web app):', answerJson);
+    
+    // Send answer back to background script for forwarding
     chrome.runtime.sendMessage({
       type: 'WEBRTC_ANSWER',
       answer: answer,
       sessionId: sessionId
+    });
+    
+    // Show answer in extension popup
+    this.showAnswerInPopup(answerJson);
+  }
+
+  showAnswerInPopup(answerJson) {
+    // Store answer for popup to display
+    chrome.storage.local.set({ 
+      webrtcAnswer: answerJson,
+      answerTimestamp: Date.now()
     });
   }
   
@@ -149,7 +164,10 @@ class PortifyAutomation {
         this.performLogin(command.credentials, command.platform);
         break;
       case 'CREATE_PRODUCT':
-        this.createProduct(command.productData, command.platform);
+        this.createProduct(command.data, 'payhip');
+        break;
+      case 'CREATE_PAYHIP_PRODUCT':
+        this.createPayhipProduct(command.data);
         break;
       case 'EXTRACT_PRODUCTS':
         // Stub: you can implement real extraction later
@@ -263,6 +281,83 @@ class PortifyAutomation {
     });
     
     this.sendStatus('product_form_filled', productData.title);
+  }
+
+  async createPayhipProduct(productData) {
+    try {
+      this.sendStatus('starting_product_creation', productData.title);
+      
+      // Navigate to product creation page if not already there
+      if (!window.location.href.includes('payhip.com/product/add')) {
+        await this.navigate('https://payhip.com/product/add/digital');
+        await this.wait(4000); // Wait for page load
+      }
+
+      // Use injected script for more robust automation
+      window.postMessage({
+        type: 'PORTIFY_AUTOMATION_COMMAND',
+        command: {
+          type: 'CREATE_PAYHIP_PRODUCT',
+          id: `cmd_${Date.now()}`,
+          productData: productData
+        }
+      }, '*');
+
+      // Listen for result
+      const resultHandler = (event) => {
+        if (event.data.type === 'PORTIFY_AUTOMATION_RESULT') {
+          window.removeEventListener('message', resultHandler);
+          const result = event.data.result;
+          
+          if (result.status === 'success') {
+            this.sendStatus('product_created', productData.title);
+            
+            // Handle image uploads if any
+            if (productData.images && productData.images.length > 0) {
+              this.uploadProductImages(productData.images);
+            }
+          } else {
+            this.sendStatus('error', `Product creation failed: ${result.message}`);
+          }
+        }
+      };
+
+      window.addEventListener('message', resultHandler);
+      
+    } catch (error) {
+      console.error('Product creation error:', error);
+      this.sendStatus('error', `Failed to create product: ${error.message}`);
+    }
+  }
+
+  async uploadProductImages(imageUrls) {
+    for (let i = 0; i < imageUrls.length; i++) {
+      const imageUrl = imageUrls[i];
+      try {
+        this.sendStatus('uploading_image', `Image ${i + 1}/${imageUrls.length}`);
+        
+        // Download image and upload it
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        
+        // Find file input and upload
+        const fileInput = document.querySelector('input[type="file"][accept*="image"]');
+        if (fileInput) {
+          const file = new File([blob], `product-image-${i + 1}.jpg`, { type: 'image/jpeg' });
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          fileInput.files = dataTransfer.files;
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          await this.wait(2000); // Wait for upload
+        }
+      } catch (error) {
+        console.error('Image upload error:', error);
+        this.sendStatus('error', `Failed to upload image: ${error.message}`);
+      }
+    }
+    
+    this.sendStatus('images_uploaded', 'All images processed');
   }
   
   sendStatus(status, data = null) {
