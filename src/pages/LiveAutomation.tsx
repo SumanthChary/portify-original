@@ -197,9 +197,10 @@ export default function LiveAutomation() {
     // Get migration data from URL params or storage
     const migrationData = JSON.parse(localStorage.getItem('migrationData') || '{}');
     const productsToMigrate = migrationData.products || [];
+    const sourceStore = migrationData.sourceStore || 'gumroad';
     
     if (productsToMigrate.length === 0) {
-      toast.error('No products found to migrate');
+      toast.error('No products found to migrate. Please go back to the wizard to select products.');
       return;
     }
 
@@ -207,31 +208,64 @@ export default function LiveAutomation() {
     setProgress(0);
 
     try {
-      setCurrentAction('Starting migration process...');
+      setCurrentAction('Starting automated product migration...');
       
-      // Step 1: Navigate to Payhip
+      // Step 1: Navigate to Payhip and check login status
       sendCommand({
         type: 'NAVIGATE',
-        data: { url: 'https://payhip.com/login' }
+        data: { url: 'https://payhip.com' }
       });
       
       await new Promise(resolve => setTimeout(resolve, 3000));
-      setProgress(20);
-
-      // Step 2: Check if already logged in or need to login
+      
       sendCommand({
         type: 'GET_PAGE_INFO',
         data: {}
       });
       
       await new Promise(resolve => setTimeout(resolve, 2000));
+      setProgress(10);
+
+      // Step 2: If needed, prompt for Payhip login
+      setCurrentAction('Checking Payhip login status...');
+      
+      // For demo purposes, we'll assume user needs to log in or is already logged in
+      // In real scenario, we'd check the page info response
+      const needsLogin = true; // This would be determined from page info
+      
+      if (needsLogin) {
+        setCurrentAction('Please log into Payhip manually, then we\'ll continue...');
+        
+        // Navigate to login page
+        sendCommand({
+          type: 'NAVIGATE',
+          data: { url: 'https://payhip.com/login' }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        setProgress(20);
+        
+        // Give user time to log in manually
+        setCurrentAction('Waiting for login... (Please log in manually in the browser)');
+        await new Promise(resolve => setTimeout(resolve, 10000));
+      }
+      
       setProgress(30);
 
       // Step 3: Migrate each product
       for (let i = 0; i < productsToMigrate.length; i++) {
         const product = productsToMigrate[i];
-        setCurrentAction(`Creating product: ${product.title}`);
+        setCurrentAction(`Creating product ${i + 1}/${productsToMigrate.length}: ${product.title}`);
         
+        // Navigate to new product page
+        sendCommand({
+          type: 'NAVIGATE',
+          data: { url: 'https://payhip.com/product/add/digital' }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        
+        // Create the product with all details and images
         sendCommand({
           type: 'CREATE_PAYHIP_PRODUCT',
           data: {
@@ -242,17 +276,48 @@ export default function LiveAutomation() {
           }
         });
         
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 6000));
+        
+        // Upload images if available
+        if (product.images && product.images.length > 0) {
+          setCurrentAction(`Uploading images for: ${product.title}`);
+          sendCommand({
+            type: 'UPLOAD_PRODUCT_IMAGES',
+            data: {
+              imageUrls: product.images
+            }
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 8000));
+        }
+        
+        // Submit the product
+        setCurrentAction(`Publishing product: ${product.title}`);
+        sendCommand({
+          type: 'SUBMIT_PRODUCT',
+          data: {}
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        
         setProgress(30 + (i + 1) / productsToMigrate.length * 60);
+        
+        // Brief pause between products
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
-      setCurrentAction('Migration completed successfully!');
+      setCurrentAction('🎉 Migration completed successfully!');
       setProgress(100);
-      toast.success(`Successfully migrated ${productsToMigrate.length} products!`);
+      
+      toast.success(`Successfully migrated ${productsToMigrate.length} products to Payhip!`);
+      
+      // Clear migration data
+      localStorage.removeItem('migrationData');
       
     } catch (error) {
       console.error('Migration error:', error);
-      toast.error('Migration failed. Please try again.');
+      toast.error('Migration failed. Please check the browser console for details.');
+      setCurrentAction('❌ Migration failed - see console for details');
     } finally {
       setIsAutomating(false);
     }
@@ -630,10 +695,13 @@ export default function LiveAutomation() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => sendCommand({ type: 'SCREENSHOT' })}
+                      onClick={() => sendCommand({ 
+                        type: 'GET_PAGE_INFO',
+                        data: {}
+                      })}
                       disabled={!connection.isConnected}
                     >
-                      📸 Screenshot
+                      🔍 Check Page
                     </Button>
                     <Button
                       size="sm"
@@ -645,6 +713,28 @@ export default function LiveAutomation() {
                       disabled={!connection.isConnected}
                     >
                       🌐 Go to Payhip
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => sendCommand({ 
+                        type: 'NAVIGATE', 
+                        data: { url: 'https://payhip.com/login' } 
+                      })}
+                      disabled={!connection.isConnected}
+                    >
+                      🔐 Payhip Login
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => sendCommand({ 
+                        type: 'NAVIGATE', 
+                        data: { url: 'https://payhip.com/product/add/digital' } 
+                      })}
+                      disabled={!connection.isConnected}
+                    >
+                      ➕ Add Product
                     </Button>
                   </div>
                 </div>

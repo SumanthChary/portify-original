@@ -1,21 +1,25 @@
 body {
-  width: 350px;
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 380px;
+  min-height: 500px;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   margin: 0;
+  font-size: 14px;
 }
 
 .header {
   text-align: center;
   margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .logo {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .subtitle {
@@ -25,23 +29,25 @@ body {
 
 .status {
   background: rgba(255,255,255,0.1);
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
   backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .status-indicator {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  display: inline-block;
-  margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .status-indicator.connected {
   background: #4ade80;
-  box-shadow: 0 0 10px #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
   animation: pulse 2s infinite;
 }
 
@@ -50,90 +56,133 @@ body {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 5px #4ade80; }
-  50% { box-shadow: 0 0 20px #4ade80; }
-  100% { box-shadow: 0 0 5px #4ade80; }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .connect-btn {
   width: 100%;
   padding: 12px;
   background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.3);
+  border: none;
   border-radius: 8px;
   color: white;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   backdrop-filter: blur(10px);
 }
 
-.connect-btn:hover {
+.connect-btn:hover:not(:disabled) {
   background: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .connect-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 .instructions {
-  margin-top: 20px;
+  margin: 20px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   font-size: 12px;
-  opacity: 0.8;
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+.instructions strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #fff;
 }
 
 .instructions ol {
+  margin: 0;
   padding-left: 20px;
+}
+
+.instructions li {
+  margin-bottom: 4px;
 }
 
 .session-info {
   background: rgba(255,255,255,0.1);
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
-  margin-top: 15px;
-  font-size: 11px;
+  margin-top: 16px;
+  font-size: 12px;
 }
 
 .session-id-container {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  margin: 8px 0;
 }
 
 .session-id {
   font-family: 'Courier New', monospace;
-  background: rgba(255,255,255,0.2);
-  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 8px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11px;
   flex: 1;
   word-break: break-all;
 }
 
 .copy-btn {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.3);
   border-radius: 4px;
   color: white;
-  padding: 4px 8px;
-  font-size: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .copy-btn:hover {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.2);
+}
+
+.manual-pairing {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.manual-pairing label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.manual-pairing textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.manual-pairing textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .web-app-link {
-  color: #4ade80;
+  color: #60a5fa;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .web-app-link:hover {
@@ -143,19 +192,36 @@ body {
 .error-message {
   background: rgba(248, 113, 113, 0.2);
   border: 1px solid rgba(248, 113, 113, 0.3);
-  color: #fecaca;
-  padding: 8px;
-  border-radius: 6px;
-  margin-top: 10px;
-  font-size: 11px;
+  color: #f87171;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  animation: slideIn 0.3s ease;
 }
 
 .success-message {
   background: rgba(74, 222, 128, 0.2);
   border: 1px solid rgba(74, 222, 128, 0.3);
-  color: #bbf7d0;
-  padding: 8px;
-  border-radius: 6px;
-  margin-top: 10px;
-  font-size: 11px;
+  color: #4ade80;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#messageContainer {
+  margin-top: 16px;
 }
