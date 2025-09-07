@@ -17,7 +17,7 @@ const HeroSection = () => {
     setTimeout(() => {
       setLoading(false);
       toast.success("Migration tools ready!");
-      navigate("/simple-migration");
+      navigate("/migrate");
     }, 1000);
   };
 
