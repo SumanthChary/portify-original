@@ -5,7 +5,7 @@ let automationSessions = new Map();
 // Handle WebRTC signaling between web app and extension
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'portify-automation') {
-    const sessionId = generateSessionId();
+    let sessionId = generateSessionId();
     connections.set(sessionId, port);
     
     port.postMessage({ type: 'SESSION_CREATED', sessionId });
@@ -13,6 +13,12 @@ chrome.runtime.onConnect.addListener((port) => {
     port.onMessage.addListener(async (message) => {
       try {
         switch (message.type) {
+          case 'RECONNECT_SESSION':
+            // Handle reconnection with existing session
+            sessionId = message.sessionId;
+            connections.set(sessionId, port);
+            port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
+            break;
           case 'START_SCREEN_CAPTURE':
             await startScreenCapture(sessionId, message.tabId);
             break;

@@ -8,9 +8,43 @@ class PortifyPopup {
     this.init();
   }
   
-  init() {
+  async init() {
+    // Restore session from storage
+    await this.restoreSession();
     this.setupEventListeners();
     this.updateUI();
+  }
+  
+  async restoreSession() {
+    try {
+      const result = await chrome.storage.local.get(['portifySession']);
+      if (result.portifySession) {
+        const session = result.portifySession;
+        if (session.sessionId && session.isConnected) {
+          this.sessionId = session.sessionId;
+          this.isConnected = session.isConnected;
+          
+          // Try to reconnect to background script
+          await this.connect(true);
+        }
+      }
+    } catch (error) {
+      console.log('No previous session to restore');
+    }
+  }
+  
+  async saveSession() {
+    try {
+      await chrome.storage.local.set({
+        portifySession: {
+          sessionId: this.sessionId,
+          isConnected: this.isConnected,
+          timestamp: Date.now()
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save session:', error);
+    }
   }
   
   setupEventListeners() {
@@ -38,17 +72,25 @@ class PortifyPopup {
   }
   
   async toggleConnection() {
-    if (this.isConnected) {
+    if (this.isConnected && this.port) {
       this.disconnect();
     } else {
-      await this.connect();
+      await this.connect(this.sessionId ? true : false);
     }
   }
   
-  async connect() {
+  async connect(isReconnecting = false) {
     try {
       // Connect to background script
       this.port = chrome.runtime.connect({ name: 'portify-automation' });
+      
+      // If reconnecting with existing session, tell background script
+      if (isReconnecting && this.sessionId) {
+        this.port.postMessage({ 
+          type: 'RECONNECT_SESSION', 
+          sessionId: this.sessionId 
+        });
+      }
       
       this.port.onMessage.addListener((message) => {
         this.handleMessage(message);
@@ -67,20 +109,24 @@ class PortifyPopup {
     }
   }
   
-  disconnect() {
+  async disconnect() {
     if (this.port) {
       this.port.disconnect();
     }
-    this.handleDisconnect();
+    await this.clearSession();
   }
   
   handleMessage(message) {
     switch (message.type) {
       case 'SESSION_CREATED':
+      case 'SESSION_RECONNECTED':
         this.sessionId = message.sessionId;
         this.isConnected = true;
+        this.saveSession();
         this.updateUI();
-        this.copyToClipboard(this.sessionId);
+        if (message.type === 'SESSION_CREATED') {
+          this.copyToClipboard(this.sessionId);
+        }
         break;
         
       case 'WEBRTC_CONNECTED':
@@ -113,8 +159,14 @@ class PortifyPopup {
   
   handleDisconnect() {
     this.port = null;
+    // Don't clear session info - keep it for reconnection
+    this.updateUI();
+  }
+  
+  async clearSession() {
     this.sessionId = null;
     this.isConnected = false;
+    await chrome.storage.local.remove(['portifySession']);
     this.updateUI();
   }
   
@@ -126,7 +178,7 @@ class PortifyPopup {
     const sessionIdSpan = document.getElementById('sessionId');
     const connectionStatus = document.getElementById('connectionStatus');
     
-    if (this.isConnected && this.sessionId) {
+    if (this.isConnected && this.sessionId && this.port) {
       statusIndicator.className = 'status-indicator connected';
       statusText.textContent = 'Connected - Ready for automation';
       connectBtn.textContent = 'Disconnect';
@@ -135,6 +187,16 @@ class PortifyPopup {
       sessionInfo.style.display = 'block';
       sessionIdSpan.textContent = this.sessionId;
       connectionStatus.textContent = 'Active';
+      
+    } else if (this.isConnected && this.sessionId && !this.port) {
+      statusIndicator.className = 'status-indicator saved';
+      statusText.textContent = 'Session saved - Click to reconnect';
+      connectBtn.textContent = 'Reconnect';
+      connectBtn.disabled = false;
+      
+      sessionInfo.style.display = 'block';
+      sessionIdSpan.textContent = this.sessionId;
+      connectionStatus.textContent = 'Saved (ready to reconnect)';
       
     } else if (this.port && !this.sessionId) {
       statusIndicator.className = 'status-indicator disconnected';
