@@ -5,16 +5,25 @@ let automationSessions = new Map();
 // Handle WebRTC signaling between web app and extension
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'portify-automation') {
-    let sessionId = generateSessionId();
-    connections.set(sessionId, port);
-    
-    port.postMessage({ type: 'SESSION_CREATED', sessionId });
+    let sessionId = null;
+    // Defer session creation until INIT/RECONNECT message arrives
     
     port.onMessage.addListener(async (message) => {
       try {
         switch (message.type) {
+          case 'INIT':
+            if (message.reconnect && message.sessionId) {
+              sessionId = message.sessionId;
+              connections.set(sessionId, port);
+              port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
+            } else {
+              sessionId = generateSessionId();
+              connections.set(sessionId, port);
+              port.postMessage({ type: 'SESSION_CREATED', sessionId });
+            }
+            break;
           case 'RECONNECT_SESSION':
-            // Handle reconnection with existing session
+            // Backwards compatibility
             sessionId = message.sessionId;
             connections.set(sessionId, port);
             port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
@@ -41,8 +50,8 @@ chrome.runtime.onConnect.addListener((port) => {
     });
     
     port.onDisconnect.addListener(() => {
-      connections.delete(sessionId);
-      automationSessions.delete(sessionId);
+      if (sessionId) connections.delete(sessionId);
+      // Preserve automationSessions for reconnection
     });
   }
 });

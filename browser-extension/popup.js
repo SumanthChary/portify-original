@@ -4,14 +4,29 @@ class PortifyPopup {
     this.port = null;
     this.sessionId = null;
     this.isConnected = false;
+    this.pendingReconnect = false;
     
     this.init();
   }
   
   async init() {
-    // Restore session from storage
+    // Restore session and UI state from storage
     await this.restoreSession();
+    try {
+      const { portifyPopupState } = await chrome.storage.local.get(['portifyPopupState']);
+      if (portifyPopupState) {
+        const offerInput = document.getElementById('offerInput');
+        const answerOutput = document.getElementById('answerOutput');
+        if (offerInput && portifyPopupState.offerInputValue) offerInput.value = portifyPopupState.offerInputValue;
+        if (answerOutput && portifyPopupState.answerOutputValue) answerOutput.value = portifyPopupState.answerOutputValue;
+      }
+    } catch (e) {
+      // ignore
+    }
     this.setupEventListeners();
+    window.addEventListener('beforeunload', () => {
+      this.saveSession();
+    });
     this.updateUI();
   }
   
@@ -20,11 +35,9 @@ class PortifyPopup {
       const result = await chrome.storage.local.get(['portifySession']);
       if (result.portifySession) {
         const session = result.portifySession;
-        if (session.sessionId && session.isConnected) {
+        if (session.sessionId) {
           this.sessionId = session.sessionId;
-          this.isConnected = session.isConnected;
-          
-          // Try to reconnect to background script
+          this.isConnected = session.isConnected ?? true;
           await this.connect(true);
         }
       }
@@ -64,6 +77,32 @@ class PortifyPopup {
     if (copyAnswerBtn) {
       copyAnswerBtn.addEventListener('click', () => this.copyAnswer());
     }
+
+    // Persist offer/answer fields so popup close doesn't lose them
+    const offerInput = document.getElementById('offerInput');
+    const answerOutput = document.getElementById('answerOutput');
+    if (offerInput) {
+      offerInput.addEventListener('input', async () => {
+        const ans = document.getElementById('answerOutput');
+        await chrome.storage.local.set({
+          portifyPopupState: {
+            offerInputValue: offerInput.value,
+            answerOutputValue: ans ? ans.value : ''
+          }
+        });
+      });
+    }
+    if (answerOutput) {
+      answerOutput.addEventListener('input', async () => {
+        const off = document.getElementById('offerInput');
+        await chrome.storage.local.set({
+          portifyPopupState: {
+            offerInputValue: off ? off.value : '',
+            answerOutputValue: answerOutput.value
+          }
+        });
+      });
+    }
     
     // Update UI every second
     setInterval(() => {
@@ -83,14 +122,7 @@ class PortifyPopup {
     try {
       // Connect to background script
       this.port = chrome.runtime.connect({ name: 'portify-automation' });
-      
-      // If reconnecting with existing session, tell background script
-      if (isReconnecting && this.sessionId) {
-        this.port.postMessage({ 
-          type: 'RECONNECT_SESSION', 
-          sessionId: this.sessionId 
-        });
-      }
+      this.pendingReconnect = isReconnecting;
       
       this.port.onMessage.addListener((message) => {
         this.handleMessage(message);
@@ -98,6 +130,13 @@ class PortifyPopup {
       
       this.port.onDisconnect.addListener(() => {
         this.handleDisconnect();
+      });
+
+      // Inform background whether this is a reconnect with an existing session
+      this.port.postMessage({
+        type: 'INIT',
+        reconnect: isReconnecting && !!this.sessionId,
+        sessionId: this.sessionId
       });
       
       document.getElementById('connectBtn').textContent = 'Connecting...';
@@ -119,14 +158,24 @@ class PortifyPopup {
   handleMessage(message) {
     switch (message.type) {
       case 'SESSION_CREATED':
+        if (this.pendingReconnect && this.sessionId) {
+          // Ignore stray creation during reconnect
+          return;
+        }
+        this.sessionId = message.sessionId;
+        this.isConnected = true;
+        this.pendingReconnect = false;
+        this.saveSession();
+        this.updateUI();
+        this.copyToClipboard(this.sessionId);
+        break;
+        
       case 'SESSION_RECONNECTED':
         this.sessionId = message.sessionId;
         this.isConnected = true;
+        this.pendingReconnect = false;
         this.saveSession();
         this.updateUI();
-        if (message.type === 'SESSION_CREATED') {
-          this.copyToClipboard(this.sessionId);
-        }
         break;
         
       case 'WEBRTC_CONNECTED':
@@ -144,6 +193,14 @@ class PortifyPopup {
             const answerJson = JSON.stringify(message.answer);
             answerOutput.value = answerJson;
             this.copyToClipboard(answerJson);
+            // Persist for when popup closes
+            const offerInput = document.getElementById('offerInput');
+            chrome.storage.local.set({
+              portifyPopupState: {
+                offerInputValue: offerInput ? offerInput.value : '',
+                answerOutputValue: answerJson
+              }
+            });
             this.showSuccess('Answer generated and copied! Paste into the web app.');
           }
         } catch (e) {
