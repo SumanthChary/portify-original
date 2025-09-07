@@ -35,9 +35,10 @@ class PortifyPopup {
       const result = await chrome.storage.local.get(['portifySession']);
       if (result.portifySession) {
         const session = result.portifySession;
-        if (session.sessionId) {
+        if (session.sessionId && session.persist !== false) {
           this.sessionId = session.sessionId;
-          this.isConnected = session.isConnected ?? true;
+          this.isConnected = true;
+          // Auto-connect to existing session
           await this.connect(true);
         }
       }
@@ -52,7 +53,8 @@ class PortifyPopup {
         portifySession: {
           sessionId: this.sessionId,
           isConnected: this.isConnected,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          persist: true // Always persist unless explicitly cleared
         }
       });
     } catch (error) {
@@ -152,6 +154,13 @@ class PortifyPopup {
     if (this.port) {
       this.port.disconnect();
     }
+    // Clear persistent session from background script
+    if (this.sessionId) {
+      await chrome.runtime.sendMessage({
+        type: 'CLEAR_PERSISTENT_SESSION',
+        sessionId: this.sessionId
+      });
+    }
     await this.clearSession();
   }
   
@@ -223,7 +232,11 @@ class PortifyPopup {
   async clearSession() {
     this.sessionId = null;
     this.isConnected = false;
-    await chrome.storage.local.remove(['portifySession']);
+    await chrome.storage.local.set({
+      portifySession: {
+        persist: false // Mark as cleared
+      }
+    });
     this.updateUI();
   }
   

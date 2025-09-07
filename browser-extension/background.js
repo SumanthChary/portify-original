@@ -1,12 +1,12 @@
 // Background service worker for Portify automation
 let connections = new Map();
 let automationSessions = new Map();
+let persistentSessions = new Map(); // Store session data persistently
 
 // Handle WebRTC signaling between web app and extension
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'portify-automation') {
     let sessionId = null;
-    // Defer session creation until INIT/RECONNECT message arrives
     
     port.onMessage.addListener(async (message) => {
       try {
@@ -15,10 +15,18 @@ chrome.runtime.onConnect.addListener((port) => {
             if (message.reconnect && message.sessionId) {
               sessionId = message.sessionId;
               connections.set(sessionId, port);
-              port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
+              // Restore persistent session data if it exists
+              if (persistentSessions.has(sessionId)) {
+                const sessionData = persistentSessions.get(sessionId);
+                port.postMessage({ type: 'SESSION_RECONNECTED', sessionId, data: sessionData });
+              } else {
+                port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
+              }
             } else {
               sessionId = generateSessionId();
               connections.set(sessionId, port);
+              // Create persistent session entry
+              persistentSessions.set(sessionId, { created: Date.now(), active: true });
               port.postMessage({ type: 'SESSION_CREATED', sessionId });
             }
             break;
@@ -50,8 +58,15 @@ chrome.runtime.onConnect.addListener((port) => {
     });
     
     port.onDisconnect.addListener(() => {
-      if (sessionId) connections.delete(sessionId);
-      // Preserve automationSessions for reconnection
+      if (sessionId) {
+        connections.delete(sessionId);
+        // Keep persistent session data for reconnection
+        if (persistentSessions.has(sessionId)) {
+          const sessionData = persistentSessions.get(sessionId);
+          sessionData.lastDisconnect = Date.now();
+          persistentSessions.set(sessionId, sessionData);
+        }
+      }
     });
   }
 });
@@ -127,3 +142,13 @@ async function handleICECandidate(sessionId, candidate) {
 function generateSessionId() {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
+
+// Add method to clear persistent session (called when user explicitly disconnects)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'CLEAR_PERSISTENT_SESSION' && message.sessionId) {
+    persistentSessions.delete(message.sessionId);
+    automationSessions.delete(message.sessionId);
+    connections.delete(message.sessionId);
+    sendResponse({ cleared: true });
+  }
+});
