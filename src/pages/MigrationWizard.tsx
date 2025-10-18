@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ArrowRight, ArrowLeft, Globe, Zap, Shield, CheckCircle2, Settings } from "lucide-react";
 import Header from "@/components/Header";
 import { realGumroadService } from "@/services/RealGumroadService";
+import { createMigrationSessionWithProducts, StoredUniversalProduct, UniversalProductInput } from "@/services/MigrationSessionService";
 import { supabase } from "@/integrations/supabase/client";
 
 const PLATFORMS = [
@@ -96,7 +97,7 @@ const MigrationWizard = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [useBrowserMode, setUseBrowserMode] = useState(false);
   const [credentials, setCredentials] = useState<Record<string, string>>({});
-  const [extractedProducts, setExtractedProducts] = useState<any[]>([]);
+  const [extractedProducts, setExtractedProducts] = useState<StoredUniversalProduct[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -130,8 +131,8 @@ const MigrationWizard = () => {
     setIsExtracting(true);
     
     try {
-      let products = [];
-      let currentSessionId = '';
+  let products: StoredUniversalProduct[] = [];
+  let currentSessionId = '';
 
       if (platform.id === 'gumroad' && !useBrowserMode && credentials.apiKey) {
         // Real Gumroad API extraction
@@ -140,9 +141,9 @@ const MigrationWizard = () => {
           throw new Error('Invalid Gumroad API key. Please check your credentials.');
         }
 
-        products = await realGumroadService.extractProducts(credentials.apiKey);
+        const gumroadProducts = await realGumroadService.extractProducts(credentials.apiKey);
         
-        if (products.length === 0) {
+        if (gumroadProducts.length === 0) {
           toast.info('No products found in your account');
           return;
         }
@@ -153,39 +154,63 @@ const MigrationWizard = () => {
           return;
         }
 
-        currentSessionId = await realGumroadService.storeExtractionSession(
+        const { sessionId: storedSessionId, products: storedProducts } = await realGumroadService.storeExtractionSession(
           user.id,
-          products,
+          gumroadProducts,
           platform.id
         );
+  products = storedProducts;
+        currentSessionId = storedSessionId;
       } else {
         // Browser automation or API simulation for other platforms
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         // Simulate products for demo
-        products = [
-          { 
-            id: '1', 
-            title: 'Premium Digital Course', 
-            price: 99, 
+        const simulatedProducts: UniversalProductInput[] = [
+          {
+            source_product_id: crypto.randomUUID(),
+            title: 'Premium Digital Course',
+            price: 99,
             description: 'Learn amazing skills with this comprehensive course',
-            images: ['https://via.placeholder.com/300x200?text=Course+Image']
+            images: ['https://via.placeholder.com/300x200?text=Course+Image'],
+            status: 'active',
           },
-          { 
-            id: '2', 
-            title: 'E-book Guide', 
-            price: 29, 
+          {
+            source_product_id: crypto.randomUUID(),
+            title: 'E-book Guide',
+            price: 29,
             description: 'Complete guide to mastering your craft',
-            images: ['https://via.placeholder.com/300x200?text=Ebook+Cover']
+            images: ['https://via.placeholder.com/300x200?text=Ebook+Cover'],
+            status: 'active',
           },
-          { 
-            id: '3', 
-            title: 'Software Tool License', 
-            price: 149, 
+          {
+            source_product_id: crypto.randomUUID(),
+            title: 'Software Tool License',
+            price: 149,
             description: 'Productivity software that saves you hours',
-            images: ['https://via.placeholder.com/300x200?text=Software+Icon']
+            images: ['https://via.placeholder.com/300x200?text=Software+Icon'],
+            status: 'active',
           }
         ];
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error('Please log in to continue');
+          return;
+        }
+
+        const { sessionId: genericSessionId, products: storedProducts } = await createMigrationSessionWithProducts(
+          user.id,
+          platform.id,
+          simulatedProducts,
+          {
+            mode: useBrowserMode ? 'browser' : 'api',
+            fields: credentials,
+          }
+        );
+
+        currentSessionId = genericSessionId;
+        products = storedProducts;
       }
       
       setExtractedProducts(products);
@@ -223,13 +248,21 @@ const MigrationWizard = () => {
     
     try {
       const productsToMigrate = extractedProducts.filter(p => selectedProducts.includes(p.id));
+      const automationMode: "api" | "browser" | "hybrid" = selectedPlatformData?.type === 'both'
+        ? (useBrowserMode ? 'browser' : 'api')
+        : selectedPlatformData?.type === 'browser'
+          ? 'browser'
+          : 'api';
       
       // Store migration data for LiveAutomation page
       const migrationData = {
         sessionId,
         products: productsToMigrate,
+        productIds: productsToMigrate.map((product) => product.id),
+        productCount: productsToMigrate.length,
         sourcePlatform: selectedPlatform,
         destinationPlatform: 'payhip',
+        automationMode,
         useZapier,
         zapierWebhookUrl
       };

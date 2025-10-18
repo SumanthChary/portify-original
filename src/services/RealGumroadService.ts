@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { createMigrationSessionWithProducts, StoredUniversalProduct, UniversalProductInput } from "./MigrationSessionService";
 
 export interface GumroadProduct {
   id: string;
@@ -11,7 +12,7 @@ export interface GumroadProduct {
   thumbnail_url?: string;
   tags?: string | string[];
   formatted_price: string;
-  file_info: any;
+  file_info: unknown;
   sales_count: number;
   product_type: string;
   custom_permalink?: string;
@@ -78,64 +79,54 @@ export class RealGumroadService {
     userId: string,
     products: GumroadProduct[],
     sourcePlatform: string
-  ): Promise<string> {
+  ): Promise<{ sessionId: string; products: StoredUniversalProduct[] }> {
     // Create migration session
-    const sessionId = crypto.randomUUID();
-    
-    const { error: sessionError } = await supabase
-      .from('migration_sessions')
-      .insert({
-        session_id: sessionId,
-        user_id: userId,
-        source_platform: sourcePlatform,
-        destination_platform: '', // Will be set later
-        credentials: JSON.stringify({ extracted: true }),
-        status: 'extracted'
-      });
-
-    if (sessionError) {
-      throw new Error(`Failed to create migration session: ${sessionError.message}`);
-    }
-
-    // Store extracted products
-    const universalProducts = products.map(product => {
+    const mappedProducts: UniversalProductInput[] = products.map((product) => {
       const images = [
         ...(product.thumbnail_url ? [product.thumbnail_url] : []),
         ...(product.preview_url ? [product.preview_url] : [])
       ];
 
       const files = Array.isArray(product.file_info)
-        ? product.file_info
-        : (product.file_info ? [product.file_info] : []);
+        ? product.file_info.map((item) =>
+            typeof item === "string" ? item : JSON.stringify(item)
+          )
+        : product.file_info
+          ? [
+              typeof product.file_info === "string"
+                ? product.file_info
+                : JSON.stringify(product.file_info),
+            ]
+          : [];
 
-      const variants: any[] = [];
+      const tagsArray = Array.isArray(product.tags)
+        ? product.tags
+        : typeof product.tags === "string"
+          ? product.tags.split(",").map((tag) => tag.trim()).filter(Boolean)
+          : [];
 
       return {
-        session_id: sessionId,
         source_product_id: product.id,
-        source_platform: sourcePlatform,
         title: product.name,
-        description: product.description || '',
+        description: product.description || "",
         price: product.price,
         images,
         files,
-        variants,
-        tags: Array.isArray(product.tags) ? product.tags : (typeof product.tags === 'string' ? product.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []),
-        category: product.product_type || 'digital',
-        status: product.published ? 'active' : 'draft',
-        migration_status: 'ready'
+        variants: [],
+        tags: tagsArray,
+        category: product.product_type || "digital",
+        status: product.published ? "active" : "draft",
       };
     });
 
-    const { error: productsError } = await supabase
-      .from('universal_products')
-      .insert(universalProducts);
+    const { sessionId, products: storedProducts } = await createMigrationSessionWithProducts(
+      userId,
+      sourcePlatform,
+      mappedProducts,
+      { extracted: true }
+    );
 
-    if (productsError) {
-      throw new Error(`Failed to store products: ${productsError.message}`);
-    }
-
-    return sessionId;
+    return { sessionId, products: storedProducts };
   }
 }
 

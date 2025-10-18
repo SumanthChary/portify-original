@@ -25,12 +25,15 @@ import {
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import PostPaymentGuide from '@/components/PostPaymentGuide';
+import { supabase } from '@/integrations/supabase/client';
+import { createMigrationJob } from '@/services/MigrationJobService';
+import type { MigrationRuntimeData } from '@/types/migration';
 
 interface AutomationCommand {
   id: string;
   type: string;
   status: 'pending' | 'executing' | 'completed' | 'error';
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -40,6 +43,14 @@ interface ConnectionStatus {
   peerConnection: RTCPeerConnection | null;
   dataChannel: RTCDataChannel | null;
   videoStream: MediaStream | null;
+}
+
+interface ExtensionMessage {
+  type: string;
+  status?: string;
+  progress?: number;
+  message?: string;
+  data?: Record<string, unknown>;
 }
 
 export default function LiveAutomation() {
@@ -62,6 +73,9 @@ export default function LiveAutomation() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [offerSdp, setOfferSdp] = useState('');
   const [answerSdp, setAnswerSdp] = useState('');
+  const [runtimeData, setRuntimeData] = useState<MigrationRuntimeData | null>(null);
+  const jobCreationInProgress = useRef(false);
+  const [jobQueued, setJobQueued] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -71,7 +85,108 @@ export default function LiveAutomation() {
     return () => {
       cleanup();
     };
+    // cleanup does not depend on props/state and should only run on unmount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('migrationData');
+    if (!stored) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stored) as MigrationRuntimeData;
+      setRuntimeData(parsed);
+    } catch (error) {
+      console.error('Failed to parse migration data', error);
+      toast.error('Unable to read migration details. Please restart the wizard.');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!runtimeData || jobQueued) {
+      return;
+    }
+
+    const paymentSuccessParam = searchParams.get('payment_success') === 'true';
+    const bypassParam = searchParams.get('bypass') === 'true';
+
+    const productIds = runtimeData.productIds && runtimeData.productIds.length > 0
+      ? runtimeData.productIds
+      : runtimeData.products?.map((product) => product.id) ?? [];
+
+    if (productIds.length === 0) {
+      return;
+    }
+
+    const isBypassed = runtimeData.paymentStatus === 'bypassed' || bypassParam;
+    const isPaid = runtimeData.paymentStatus === 'paid' || paymentSuccessParam;
+
+    if (!isBypassed && !isPaid) {
+      return;
+    }
+
+    if (jobCreationInProgress.current) {
+      return;
+    }
+
+    jobCreationInProgress.current = true;
+
+    const createJob = async () => {
+      try {
+        let resolvedPaymentStatus: 'bypassed' | 'paid' = isBypassed ? 'bypassed' : 'paid';
+
+        if (!isBypassed && runtimeData.paymentStatus !== 'paid') {
+          const { error: confirmError } = await supabase.functions.invoke('confirm-payment', {
+            body: {
+              sessionId: runtimeData.sessionId,
+              paymentId: runtimeData.paymentId,
+              provider: runtimeData.paymentProvider ?? 'paypal',
+            },
+          });
+
+          if (confirmError) {
+            throw new Error(confirmError.message);
+          }
+
+          resolvedPaymentStatus = 'paid';
+        }
+
+        const { jobId } = await createMigrationJob({
+          sessionId: runtimeData.sessionId,
+          plan: runtimeData.plan ?? 'standard',
+          destinationPlatform: runtimeData.destinationPlatform,
+          automationMode: runtimeData.automationMode ?? 'browser',
+          productIds,
+          totalAmount: runtimeData.totalAmount ?? null,
+          paymentId: runtimeData.paymentId ?? null,
+          paymentStatus: resolvedPaymentStatus,
+          metadata: {
+            paymentProvider: runtimeData.paymentProvider ?? 'paypal',
+            sourcePlatform: runtimeData.sourcePlatform,
+          },
+        });
+
+        const updated: MigrationRuntimeData = {
+          ...runtimeData,
+          jobId,
+          paymentStatus: resolvedPaymentStatus,
+        };
+
+        setRuntimeData(updated);
+        localStorage.setItem('migrationData', JSON.stringify(updated));
+        setJobQueued(true);
+        toast.success('Migration job queued. You can now launch automation.');
+      } catch (error) {
+        console.error('Failed to queue migration job', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to queue migration job');
+        jobCreationInProgress.current = false;
+      }
+    };
+
+    createJob();
+  }, [runtimeData, jobQueued, searchParams]);
 
   const cleanup = () => {
     if (connection.peerConnection) {
@@ -194,10 +309,13 @@ export default function LiveAutomation() {
       return;
     }
 
-    // Get migration data from URL params or storage
-    const migrationData = JSON.parse(localStorage.getItem('migrationData') || '{}');
-    const productsToMigrate = migrationData.products || [];
-    const sourceStore = migrationData.sourceStore || 'gumroad';
+    if (!runtimeData) {
+      toast.error('Migration context missing. Please restart the migration wizard.');
+      return;
+    }
+
+    const productsToMigrate = runtimeData.products || [];
+    const destinationPlatform = runtimeData.destinationPlatform || 'payhip';
     
     if (productsToMigrate.length === 0) {
       toast.error('No products found to migrate. Please go back to the wizard to select products.');
@@ -210,10 +328,10 @@ export default function LiveAutomation() {
     try {
       setCurrentAction('Starting automated product migration...');
       
-      // Step 1: Navigate to Payhip and check login status
+      // Step 1: Navigate to target platform and check login status
       sendCommand({
         type: 'NAVIGATE',
-        data: { url: 'https://payhip.com' }
+        data: { url: destinationPlatform === 'payhip' ? 'https://payhip.com' : 'https://payhip.com' }
       });
       
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -347,11 +465,6 @@ export default function LiveAutomation() {
       // Simulate receiving status updates
       simulateStatusUpdates();
     }, 1000);
-
-    // Mock message handling for demo
-    const mockMessageHandler = (message: any) => {
-      handleExtensionMessage(message);
-    };
   };
 
   const simulateStatusUpdates = () => {
@@ -370,18 +483,28 @@ export default function LiveAutomation() {
     });
   };
 
-  const handleExtensionMessage = (message: any) => {
+  const handleExtensionMessage = (message: ExtensionMessage) => {
     switch (message.type) {
       case 'STATUS_UPDATE':
-        setCurrentAction(message.status);
-        updateCommandStatus(message.data?.commandId, message.status);
+        setCurrentAction(message.status ?? 'Status update received');
+        {
+          const commandId =
+            message.data && typeof message.data.commandId === 'string'
+              ? (message.data.commandId as string)
+              : undefined;
+          if (commandId) {
+            updateCommandStatus(commandId, message.status ?? 'executing');
+          }
+        }
         break;
       case 'AUTOMATION_PROGRESS':
-        setProgress(message.progress);
+        if (typeof message.progress === 'number') {
+          setProgress(message.progress);
+        }
         break;
       case 'ERROR':
-        toast.error(message.message);
-        setCurrentAction(`Error: ${message.message}`);
+        toast.error(message.message ?? 'Automation error');
+        setCurrentAction(`Error: ${message.message ?? 'Automation error'}`);
         break;
     }
   };

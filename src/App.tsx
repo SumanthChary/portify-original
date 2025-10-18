@@ -21,6 +21,7 @@ import SelectProducts from "./pages/SelectProducts";
 import Payment from "./pages/Payment";
 import LiveAutomation from "./pages/LiveAutomation";
 import SimpleMigration from "./pages/SimpleMigration";
+import Health from "./pages/Health";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/live-automation" element={<LiveAutomation />} />
             <Route path="/simple-migration" element={<SimpleMigration />} />
             <Route path="/migrate" element={<MigrationWizard />} />
+            <Route path="/health" element={<Health />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

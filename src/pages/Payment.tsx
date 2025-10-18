@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { CreditCard, Package, Zap, Shield, Check, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
+import type { MigrationRuntimeData } from "@/types/migration";
 
 const Payment = () => {
   const navigate = useNavigate();
-  const [migrationData, setMigrationData] = useState<any>(null);
+  const [migrationData, setMigrationData] = useState<MigrationRuntimeData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('standard');
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'standard' | 'premium'>('standard');
+  const [paymentProvider, setPaymentProvider] = useState<'paypal' | 'dodo'>('paypal');
 
   useEffect(() => {
     const stored = localStorage.getItem('migrationData');
@@ -21,10 +23,28 @@ const Payment = () => {
       navigate('/extract');
       return;
     }
-    setMigrationData(JSON.parse(stored));
+    try {
+  const parsed = JSON.parse(stored) as MigrationRuntimeData;
+      setMigrationData(parsed);
+      if (parsed.plan) {
+        setSelectedPlan(parsed.plan);
+      }
+      if (parsed.paymentProvider) {
+        setPaymentProvider(parsed.paymentProvider);
+      }
+    } catch {
+      toast.error('Unable to read migration data. Please restart the flow.');
+      navigate('/extract');
+    }
   }, [navigate]);
 
-  const plans = [
+  const plans: Array<{
+    id: "basic" | "standard" | "premium";
+    name: string;
+    pricePerProduct: number;
+    features: string[];
+    badge: string | null;
+  }> = [
     {
       id: 'basic',
       name: 'Basic Copy',
@@ -72,18 +92,11 @@ const Payment = () => {
       return;
     }
 
-    // Check if user is exceptional (bypass payment)
     const { data: { user } } = await supabase.auth.getUser();
     const userEmail = user?.email;
 
-    if (userEmail === 'enjoywithpandu@gmail.com') {
-      toast.success('Exceptional user detected! Bypassing payment...');
-      navigate('/live-automation?session=' + migrationData.sessionId + '&payment_success=true&bypass=true');
-      return;
-    }
-
     // Check for zero products
-    const productCount = migrationData.productCount || migrationData.selectedProducts?.length || 0;
+  const productCount = migrationData.productCount || migrationData.productIds?.length || 0;
     if (productCount <= 0) {
       toast.error('Cannot proceed with 0 products. Please go back and select products.');
       return;
@@ -98,7 +111,9 @@ const Payment = () => {
           sessionId: migrationData.sessionId,
           productCount: productCount,
           destinationPlatform: migrationData.destinationPlatform,
-          userEmail: userEmail
+          userEmail: userEmail,
+          plan: selectedPlan,
+          provider: paymentProvider,
         }
       });
 
@@ -108,22 +123,34 @@ const Payment = () => {
 
       // Redirect to PayPal Checkout
       if (data.url) {
-        // Update local storage with payment info BEFORE redirect
-        const processedData = {
+        const baseData: MigrationRuntimeData = {
           ...migrationData,
           paymentInitiated: true,
           plan: selectedPlan,
-          initiatedAt: new Date().toISOString()
+          paymentProvider,
+          paymentId: data.paymentId ?? null,
+          initiatedAt: new Date().toISOString(),
+          totalAmount,
         };
-        
-        localStorage.setItem('migrationData', JSON.stringify(processedData));
-        
-        // Redirect to PayPal and then back to our success page
-        window.location.href = data.url + '&return_url=' + encodeURIComponent(
-          window.location.origin + '/live-automation?payment_success=true&session=' + migrationData.sessionId
-        );
-        
-        toast.success('Redirecting to PayPal payment...');
+
+        if (data.url.startsWith(window.location.origin)) {
+          const bypassData: MigrationRuntimeData = {
+            ...baseData,
+            paymentStatus: 'bypassed',
+          };
+          localStorage.setItem('migrationData', JSON.stringify(bypassData));
+          toast.success('Payment bypassed. Continuing to migration...');
+          window.location.href = data.url;
+          return;
+        }
+
+        const pendingData: MigrationRuntimeData = {
+          ...baseData,
+          paymentStatus: 'pending',
+        };
+        localStorage.setItem('migrationData', JSON.stringify(pendingData));
+        window.location.href = data.url;
+        toast.success('Redirecting to checkout...');
       } else {
         throw new Error('Failed to create payment session');
       }
@@ -140,7 +167,11 @@ const Payment = () => {
   }
 
   const selectedPlanData = plans.find(p => p.id === selectedPlan);
-  const totalAmount = migrationData.productCount * (selectedPlanData?.pricePerProduct || 0);
+  const platformMultiplier = migrationData.destinationPlatform === 'payhip' ? 1 : 1.5;
+  const totalAmount = Number(
+    (migrationData.productCount * (selectedPlanData?.pricePerProduct || 0) * platformMultiplier)
+      .toFixed(2)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
@@ -202,7 +233,7 @@ const Payment = () => {
 
                     <div className="text-center">
                       <div className="text-lg font-semibold">
-                        Total: ${(migrationData.productCount * plan.pricePerProduct).toFixed(2)}
+                        Total: ${(migrationData.productCount * plan.pricePerProduct * platformMultiplier).toFixed(2)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         for {migrationData.productCount} products
@@ -211,6 +242,53 @@ const Payment = () => {
                   </Card>
                 ))}
               </div>
+
+              <Card className="p-6 mt-8">
+                <h2 className="text-lg md:text-xl font-semibold mb-4">Choose Your Checkout Provider</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card
+                    className={`p-4 border-2 cursor-pointer transition ${
+                      paymentProvider === 'paypal' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+                    }`}
+                    onClick={() => setPaymentProvider('paypal')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">PayPal</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Global trusted payments, card + PayPal balance
+                        </p>
+                      </div>
+                      <Shield className="w-5 h-5 text-primary" />
+                    </div>
+                    <ul className="text-sm mt-3 space-y-1 text-muted-foreground">
+                      <li>• Instant confirmation</li>
+                      <li>• Buyer protection included</li>
+                    </ul>
+                  </Card>
+
+                  <Card
+                    className={`p-4 border-2 cursor-pointer transition ${
+                      paymentProvider === 'dodo' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+                    }`}
+                    onClick={() => setPaymentProvider('dodo')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">Dodo Payments</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Lightweight checkout for creators & digital goods
+                        </p>
+                      </div>
+                      <Zap className="w-5 h-5 text-primary" />
+                    </div>
+                    <ul className="text-sm mt-3 space-y-1 text-muted-foreground">
+                      <li>• Super-fast checkout flow</li>
+                      <li>• Works globally with cards & UPI</li>
+                    </ul>
+                  </Card>
+                </div>
+              </Card>
             </div>
 
             {/* Order Summary */}
@@ -223,8 +301,8 @@ const Payment = () => {
                 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span>From:</span>
-                    <span className="font-bold capitalize">{migrationData.platform}</span>
+                        <span>From:</span>
+                        <span className="font-bold capitalize">{migrationData.sourcePlatform}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>To:</span>
@@ -233,6 +311,10 @@ const Payment = () => {
                   <div className="flex justify-between">
                     <span>Products:</span>
                     <span className="font-bold">{migrationData.productCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Checkout:</span>
+                    <span className="font-bold capitalize">{paymentProvider === 'paypal' ? 'PayPal' : 'Dodo Payments'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Speed:</span>
@@ -252,7 +334,7 @@ const Payment = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    You pay safely with Stripe
+                    You pay safely with {paymentProvider === 'paypal' ? 'PayPal' : 'Dodo Payments'}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full" />

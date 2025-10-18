@@ -148,6 +148,75 @@ We welcome contributions from developers of all skill levels! Help us support mo
 ### Platform Integration Areas
 
 - 🔌 **New Platform Integrations**: Add support for Etsy, WooCommerce, BigCommerce, etc.
+
+## 🚀 Deployment
+
+Portify AI can be deployed for free using Vercel and Supabase.
+
+### Prerequisites
+- GitHub account
+- Vercel account (free tier)
+- Supabase account (free tier)
+- N8n account (free tier)
+
+### Deploy Frontend to Vercel
+
+1. **Connect Repository**:
+   - Go to [Vercel](https://vercel.com) and sign in
+   - Click "New Project" and import your GitHub repo
+
+2. **Configure Build Settings**:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+
+3. **Set Environment Variables**:
+   In Vercel dashboard > Project Settings > Environment Variables:
+   ```
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+   VITE_SUPABASE_PROJECT_ID=your-project-id
+   VITE_N8N_WEBHOOK_URL=https://your-n8n-instance.app.n8n.cloud/webhook/migrate-gumroad
+   ```
+
+4. **Deploy**:
+   - Vercel will auto-deploy on every push to `main`
+   - Your app will be live at `https://your-project.vercel.app`
+
+### Set Up Supabase
+
+1. **Create Project**:
+   - Go to [Supabase](https://supabase.com) and create a free project
+
+2. **Configure Auth**:
+   - In Supabase Dashboard > Authentication > Settings
+   - Set Site URL to your Vercel domain (e.g., `https://your-project.vercel.app`)
+   - Add redirect URLs if needed
+
+3. **Database**:
+   - Run migrations if any (check `supabase/migrations/`)
+
+### Configure N8n Workflows
+
+1. **Sign Up**:
+   - Create free account at [n8n.io](https://n8n.io)
+
+2. **Import Workflows**:
+   - Import JSON from `automation/` folder
+   - Set environment variables in N8n:
+     ```
+     PAYHIP_EMAIL=your-email
+     PAYHIP_PASSWORD=your-password
+     ```
+
+3. **Get Webhook URL**:
+   - Copy the webhook URL and set it in Vercel env vars as `VITE_N8N_WEBHOOK_URL`
+
+### Health Check
+
+Visit `https://your-project.vercel.app/health` to verify deployment.
+
+## 📄 License
 - 🎨 **UI/UX Improvements**: Enhance the universal migration interface
 - 🚀 **Performance**: Optimize migration speed across all platforms
 - 📚 **Documentation**: Improve platform-specific guides and tutorials

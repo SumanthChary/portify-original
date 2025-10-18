@@ -8,38 +8,54 @@ const corsHeaders = {
 
 const EXCEPTIONAL_EMAIL = "enjoywithpandu@gmail.com";
 
+const PLAN_PRICING: Record<string, number> = {
+  basic: 2.99,
+  standard: 4.99,
+  premium: 7.99,
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { sessionId, productCount, destinationPlatform, userEmail } = await req.json();
+    const {
+      sessionId,
+      productCount,
+      destinationPlatform,
+      userEmail,
+      plan = "standard",
+      provider = "paypal"
+    } = await req.json();
 
-    console.log(`Payment request - SessionId: ${sessionId}, ProductCount: ${productCount}, UserEmail: ${userEmail}`);
+    console.log(
+      `Payment request - SessionId: ${sessionId}, ProductCount: ${productCount}, UserEmail: ${userEmail}, Provider: ${provider}, Plan: ${plan}`
+    );
 
-    // Check for exceptional user (bypass payment)
-    if (userEmail === EXCEPTIONAL_EMAIL) {
-      console.log(`Exceptional user detected: ${userEmail}. Bypassing payment.`);
-      
-      const supabaseClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
-
-      await supabaseClient
-        .from('migration_sessions')
-        .update({ 
-          status: 'paid',
-          destination_platform: destinationPlatform
-        })
-        .eq('session_id', sessionId);
-
-      return new Response(JSON.stringify({ 
-        url: `${req.headers.get("origin")}/live-automation?session=${sessionId}&payment_success=true&bypass=true` 
-      }), {
+    if (!sessionId) {
+      return new Response(JSON.stringify({ error: "Missing sessionId" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        status: 400,
+      });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: sessionRecord, error: sessionError } = await supabaseClient
+      .from('migration_sessions')
+      .select('user_id')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (sessionError || !sessionRecord?.user_id) {
+      console.error('Session lookup failed', sessionError);
+      return new Response(JSON.stringify({ error: 'Migration session not found' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404,
       });
     }
 
@@ -50,6 +66,98 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
+      });
+    }
+
+    const pricePerProduct = PLAN_PRICING[plan] ?? PLAN_PRICING.standard;
+    const platformMultiplier = destinationPlatform === 'payhip' ? 1 : 1.5;
+    const totalAmount = Number((productCount * pricePerProduct * platformMultiplier).toFixed(2));
+
+    const insertPayment = async (status: string, providerPaymentId: string | null, metadata: Record<string, unknown>) => {
+      const { data: paymentRow, error: paymentError } = await supabaseClient
+        .from('migration_payments')
+        .insert({
+          user_id: sessionRecord.user_id,
+          session_id: sessionId,
+          provider,
+          provider_payment_id: providerPaymentId,
+          amount: totalAmount,
+          currency: 'USD',
+          status,
+          plan,
+          metadata
+        })
+        .select('id')
+        .single();
+
+      if (paymentError || !paymentRow) {
+        console.error('Failed to create payment record', paymentError);
+        throw new Error('Failed to create payment record');
+      }
+
+      return paymentRow.id as string;
+    };
+
+    const paymentMetadata = {
+      productCount,
+      destinationPlatform,
+      plan,
+      provider,
+    };
+
+    // Exceptional user bypass path
+    if (userEmail === EXCEPTIONAL_EMAIL) {
+      console.log(`Exceptional user detected: ${userEmail}. Bypassing payment.`);
+
+      const paymentId = await insertPayment('bypassed', null, {
+        ...paymentMetadata,
+        bypass: true,
+      });
+
+      await supabaseClient
+        .from('migration_sessions')
+        .update({ 
+          status: 'paid',
+          destination_platform: destinationPlatform
+        })
+        .eq('session_id', sessionId);
+
+      return new Response(JSON.stringify({ 
+        url: `${req.headers.get("origin")}/live-automation?session=${sessionId}&payment_success=true&bypass=true`,
+        paymentId
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    if (provider === 'dodo') {
+      const checkoutBase = Deno.env.get('DODO_CHECKOUT_BASE_URL');
+      if (!checkoutBase) {
+        return new Response(JSON.stringify({ error: 'DODO_CHECKOUT_BASE_URL not configured' }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+
+      const paymentId = await insertPayment('pending', null, paymentMetadata);
+
+      await supabaseClient
+        .from('migration_sessions')
+        .update({ 
+          status: 'payment_pending',
+          destination_platform: destinationPlatform
+        })
+        .eq('session_id', sessionId);
+
+      const url = new URL(checkoutBase);
+      url.searchParams.set('session', sessionId);
+      url.searchParams.set('amount', totalAmount.toString());
+      url.searchParams.set('plan', plan);
+
+      return new Response(JSON.stringify({ url: url.toString(), paymentId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
       });
     }
 
@@ -65,11 +173,6 @@ serve(async (req) => {
         status: 500,
       });
     }
-
-    // Calculate price based on product count and destination platform
-    const basePrice = 2.99; // $2.99 per product
-    const platformMultiplier = destinationPlatform === 'payhip' ? 1 : 1.5;
-    const totalAmount = (productCount * basePrice * platformMultiplier).toFixed(2);
 
     // Get PayPal access token
     const tokenResponse = await fetch('https://api.sandbox.paypal.com/v1/oauth2/token', {
@@ -96,7 +199,7 @@ serve(async (req) => {
         purchase_units: [{
           amount: {
             currency_code: 'USD',
-            value: totalAmount
+            value: totalAmount.toFixed(2)
           },
           description: `Product Migration (${productCount} products to ${destinationPlatform})`
         }],
@@ -117,10 +220,7 @@ serve(async (req) => {
     const approvalUrl = orderData.links.find((link: any) => link.rel === 'approve')?.href;
 
     // Store payment session info
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const paymentId = await insertPayment('pending', orderData.id, paymentMetadata);
 
     await supabaseClient
       .from('migration_sessions')
@@ -130,7 +230,7 @@ serve(async (req) => {
       })
       .eq('session_id', sessionId);
 
-    return new Response(JSON.stringify({ url: approvalUrl }), {
+    return new Response(JSON.stringify({ url: approvalUrl, paymentId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

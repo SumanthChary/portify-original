@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 
-const N8N_WEBHOOK_URL = "https://portify-original.app.n8n.cloud/webhook/migrate-gumroad";
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
 interface WebhookSetupProps {
   isWebhookTested: boolean;
