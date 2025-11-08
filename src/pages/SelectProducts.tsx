@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowRight, Package, ShoppingCart, Zap, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
+import type { ExtractionPreviewProduct } from "@/types/products";
 
 const DESTINATION_PLATFORMS = [
   { id: 'payhip', name: 'Payhip', type: 'browser', color: 'bg-blue-500' },
@@ -20,9 +21,10 @@ const DESTINATION_PLATFORMS = [
 ];
 
 // Mock extracted products
-const MOCK_PRODUCTS = [
+const MOCK_PRODUCTS: ExtractionPreviewProduct[] = [
   {
     id: '1',
+    sourceProductId: '1',
     name: 'Digital Marketing Course',
     price: 99.99,
     image: '/lovable-uploads/071ce28d-6d53-431f-b381-0bb44bee394d.png',
@@ -31,6 +33,7 @@ const MOCK_PRODUCTS = [
   },
   {
     id: '2',
+    sourceProductId: '2',
     name: 'SEO Masterclass',
     price: 149.99,
     image: '/lovable-uploads/094a81bc-7698-41d3-ae82-021dcb51413b.png',
@@ -39,6 +42,7 @@ const MOCK_PRODUCTS = [
   },
   {
     id: '3',
+    sourceProductId: '3',
     name: 'Social Media Templates Pack',
     price: 29.99,
     image: '/lovable-uploads/47de44e2-5e07-475f-a2a7-adc9fee9da7e.png',
@@ -47,6 +51,7 @@ const MOCK_PRODUCTS = [
   },
   {
     id: '4',
+    sourceProductId: '4',
     name: 'Email Marketing Toolkit',
     price: 79.99,
     image: '/lovable-uploads/5ef5a80f-ba3a-4e6a-8bc8-1a86f5f99158.png',
@@ -55,6 +60,7 @@ const MOCK_PRODUCTS = [
   },
   {
     id: '5',
+    sourceProductId: '5',
     name: 'Business Plan Template',
     price: 19.99,
     image: '/lovable-uploads/6326653b-23d5-431a-a677-b7895e49945c.png',
@@ -65,7 +71,14 @@ const MOCK_PRODUCTS = [
 
 const SelectProducts = () => {
   const navigate = useNavigate();
-  const [extractionData, setExtractionData] = useState<any>(null);
+  const [extractionData, setExtractionData] = useState<{
+    sessionId: string;
+    platform: string;
+    platformId: string;
+    platformType: 'api' | 'browser' | 'hybrid';
+    extractedAt: string;
+    products: ExtractionPreviewProduct[];
+  } | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [destinationPlatform, setDestinationPlatform] = useState<string>('');
   const [selectAll, setSelectAll] = useState(false);
@@ -77,7 +90,14 @@ const SelectProducts = () => {
       navigate('/extract');
       return;
     }
-    const data = JSON.parse(stored);
+    const data = JSON.parse(stored) as {
+      sessionId: string;
+      platform: string;
+      platformId: string;
+      platformType: 'api' | 'browser' | 'hybrid';
+      extractedAt: string;
+      products: ExtractionPreviewProduct[];
+    };
     setExtractionData(data);
     
     // Load real products from database if session exists
@@ -99,8 +119,9 @@ const SelectProducts = () => {
       }
 
       if (products && products.length > 0) {
-        const formattedProducts = products.map(product => ({
-          id: product.source_product_id,
+        const formattedProducts = products.map((product) => ({
+          id: product.id,
+          sourceProductId: product.source_product_id,
           name: product.title,
           price: Number(product.price) || 0,
           description: product.description || '',
@@ -117,22 +138,24 @@ const SelectProducts = () => {
   };
 
   const handleProductToggle = (productId: string) => {
+    const products = extractionData?.products || MOCK_PRODUCTS;
     setSelectedProducts(prev => {
       const newSelection = prev.includes(productId)
         ? prev.filter(id => id !== productId)
         : [...prev, productId];
       
-      setSelectAll(newSelection.length === MOCK_PRODUCTS.length);
+      setSelectAll(newSelection.length === products.length);
       return newSelection;
     });
   };
 
   const handleSelectAll = () => {
+    const products = extractionData?.products || MOCK_PRODUCTS;
     if (selectAll) {
       setSelectedProducts([]);
       setSelectAll(false);
     } else {
-      setSelectedProducts(MOCK_PRODUCTS.map(p => p.id));
+      setSelectedProducts(products.map(p => p.id));
       setSelectAll(true);
     }
   };
@@ -142,6 +165,22 @@ const SelectProducts = () => {
     const { data: { user } } = await supabase.auth.getUser();
     const userEmail = user?.email;
 
+    if (!extractionData) {
+      toast.error('Missing extraction context. Please restart.');
+      navigate('/extract');
+      return;
+    }
+
+    const destinationMeta = DESTINATION_PLATFORMS.find((platform) => platform.id === destinationPlatform);
+    const sourceType = extractionData.platformType ?? 'browser';
+    const destinationType = destinationMeta?.type ?? 'browser';
+    const automationMode: "api" | "browser" | "hybrid" =
+      sourceType === 'api' && destinationType === 'api'
+        ? 'api'
+        : sourceType === 'browser' && destinationType === 'browser'
+          ? 'browser'
+          : 'hybrid';
+
     if (userEmail === 'enjoywithpandu@gmail.com') {
       toast.success('Exceptional user detected! Proceeding without payment...');
       
@@ -150,7 +189,7 @@ const SelectProducts = () => {
         return;
       }
 
-      const products = extractionData?.products || MOCK_PRODUCTS;
+      const products = extractionData.products || MOCK_PRODUCTS;
       // For exceptional user, select all products if none selected
       const finalSelectedProducts = selectedProducts.length === 0 ? 
         products.map(p => p.id) : selectedProducts;
@@ -163,6 +202,9 @@ const SelectProducts = () => {
         destinationPlatform,
         totalCost: 0, // Free for exceptional user
         productCount: selectedProductsList.length,
+        productIds: selectedProductsList.map((product) => product.id),
+        sourcePlatform: extractionData.platformId,
+        automationMode,
         exceptional: true
       };
       
@@ -181,7 +223,7 @@ const SelectProducts = () => {
       return;
     }
 
-    const products = extractionData?.products || MOCK_PRODUCTS;
+    const products = extractionData.products || MOCK_PRODUCTS;
     const selectedProductsList = products.filter(p => selectedProducts.includes(p.id));
     const basePrice = 2.99;
     const platformMultiplier = destinationPlatform === 'payhip' ? 1 : 1.5;
@@ -192,14 +234,19 @@ const SelectProducts = () => {
       selectedProducts: selectedProductsList,
       destinationPlatform,
       totalCost,
-      productCount: selectedProductsList.length
+      productCount: selectedProductsList.length,
+      productIds: selectedProductsList.map((product) => product.id),
+      sourcePlatform: extractionData.platformId,
+      automationMode,
     };
     
     localStorage.setItem('migrationData', JSON.stringify(migrationData));
     navigate('/payment');
   };
 
-  const totalValue = MOCK_PRODUCTS
+  const effectiveProducts = extractionData?.products || MOCK_PRODUCTS;
+
+  const totalValue = effectiveProducts
     .filter(p => selectedProducts.includes(p.id))
     .reduce((sum, p) => sum + p.price, 0);
 
@@ -230,7 +277,7 @@ const SelectProducts = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
                     <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                    Your Products ({(extractionData?.products || MOCK_PRODUCTS).length})
+                    Your Products ({effectiveProducts.length})
                   </h2>
                   <Button
                     variant="outline"
@@ -243,7 +290,7 @@ const SelectProducts = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {(extractionData?.products || MOCK_PRODUCTS).map((product) => (
+                  {effectiveProducts.map((product) => (
                     <Card 
                       key={product.id}
                       className={`p-4 cursor-pointer transition-all hover:shadow-md border-2 ${

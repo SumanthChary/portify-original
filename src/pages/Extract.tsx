@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { ArrowRight, Key, Globe, Zap, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import { realGumroadService } from "@/services/RealGumroadService";
+import { createMigrationSessionWithProducts } from "@/services/MigrationSessionService";
+import type { StoredUniversalProduct, UniversalProductInput } from "@/services/MigrationSessionService";
+import type { ExtractionPreviewProduct } from "@/types/products";
 import { supabase } from "@/integrations/supabase/client";
 
 const PLATFORMS = [
@@ -102,66 +105,133 @@ const Extract = () => {
     }
 
     setIsExtracting(true);
-    
+
     try {
-      let extractedProducts = [];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please log in to continue');
+        return;
+      }
+
+      const { error: storeError } = await supabase.functions.invoke('store-credential', {
+        body: {
+          platform: platform.id,
+          connectionType: platform.type as 'api' | 'browser' | 'hybrid',
+          displayName: `${platform.name} account`,
+          credentials,
+          metadata: {
+            fields: Object.keys(credentials),
+            storedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      if (storeError) {
+        throw new Error(storeError.message ?? 'Failed to store your credentials securely');
+      }
+
       let sessionId = '';
+      let storedProducts: StoredUniversalProduct[] = [];
+      let resultCount = 0;
 
       if (platform.id === 'gumroad' && credentials.apiKey) {
-        // Real Gumroad API extraction
-        toast.loading('Connecting to Gumroad API...');
-        
-        // Validate API key first
+        toast.info('Connecting to Gumroad API...');
+
         const isValidKey = await realGumroadService.validateApiKey(credentials.apiKey);
         if (!isValidKey) {
           throw new Error('Invalid Gumroad API key. Please check your credentials.');
         }
 
-        // Extract products
-        toast.loading('Extracting products from Gumroad...');
-        extractedProducts = await realGumroadService.extractProducts(credentials.apiKey);
-        
+        toast.info('Extracting products from Gumroad...');
+        const extractedProducts = await realGumroadService.extractProducts(credentials.apiKey);
+
         if (extractedProducts.length === 0) {
           toast.info('No products found in your Gumroad account');
           return;
         }
 
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error('Please log in to continue');
-          return;
-        }
-
-        // Store extraction session
-        sessionId = await realGumroadService.storeExtractionSession(
+        const sessionResult = await realGumroadService.storeExtractionSession(
           user.id,
           extractedProducts,
           platform.id
         );
+
+        sessionId = sessionResult.sessionId;
+        storedProducts = sessionResult.products;
+        resultCount = storedProducts.length;
       } else {
-        // Simulate extraction for other platforms
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        extractedProducts = [
-          { id: '1', name: 'Digital Course', price: 99, type: 'course', description: 'Learn amazing skills' },
-          { id: '2', name: 'E-book', price: 29, type: 'ebook', description: 'Comprehensive guide' },
-          { id: '3', name: 'Software Tool', price: 149, type: 'software', description: 'Productivity booster' }
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        const simulatedProducts: UniversalProductInput[] = [
+          {
+            source_product_id: 'demo-1',
+            title: 'Digital Course',
+            description: 'Learn amazing skills',
+            price: 99,
+            images: [],
+            variants: [],
+            tags: ['course'],
+            category: 'digital',
+            status: 'active',
+          },
+          {
+            source_product_id: 'demo-2',
+            title: 'E-book',
+            description: 'Comprehensive guide',
+            price: 29,
+            images: [],
+            variants: [],
+            tags: ['ebook'],
+            category: 'digital',
+            status: 'active',
+          },
+          {
+            source_product_id: 'demo-3',
+            title: 'Software Tool',
+            description: 'Productivity booster',
+            price: 149,
+            images: [],
+            variants: [],
+            tags: ['software'],
+            category: 'digital',
+            status: 'active',
+          },
         ];
+
+        const sessionResult = await createMigrationSessionWithProducts(
+          user.id,
+          platform.id,
+          simulatedProducts,
+          { simulated: true }
+        );
+
+        sessionId = sessionResult.sessionId;
+        storedProducts = sessionResult.products;
+        resultCount = storedProducts.length;
       }
-      
-      // Store extraction data in localStorage
+
+      const previewProducts: ExtractionPreviewProduct[] = storedProducts.map((product) => ({
+        id: product.id,
+        sourceProductId: product.source_product_id,
+        name: product.title,
+        price: Number(product.price) || 0,
+        description: product.description ?? "",
+        type: product.migration_status ?? "digital",
+        images: product.images,
+      }));
+
       const extractionData = {
         sessionId,
         platform: platform.name,
         platformId: platform.id,
-        credentials,
+        platformType: platform.type,
         extractedAt: new Date().toISOString(),
-        products: extractedProducts
+        products: previewProducts,
       };
-      
+
       localStorage.setItem('extractionData', JSON.stringify(extractionData));
-      
-      toast.success(`Successfully extracted ${extractedProducts.length} products from ${platform.name}`);
+
+      toast.success(`Successfully extracted ${resultCount} products from ${platform.name}`);
       navigate('/select-products');
     } catch (error) {
       console.error('Extraction error:', error);
