@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      extension_sessions: {
+        Row: {
+          created_at: string | null
+          ice_candidates: Json | null
+          id: string
+          session_id: string
+          status: string | null
+          updated_at: string | null
+          webrtc_answer: string | null
+          webrtc_offer: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ice_candidates?: Json | null
+          id?: string
+          session_id: string
+          status?: string | null
+          updated_at?: string | null
+          webrtc_answer?: string | null
+          webrtc_offer?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ice_candidates?: Json | null
+          id?: string
+          session_id?: string
+          status?: string | null
+          updated_at?: string | null
+          webrtc_answer?: string | null
+          webrtc_offer?: string | null
+        }
+        Relationships: []
+      }
       migration_results: {
         Row: {
           completed_at: string

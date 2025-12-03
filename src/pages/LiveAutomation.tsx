@@ -373,7 +373,8 @@ export default function LiveAutomation() {
       // Step 3: Migrate each product
       for (let i = 0; i < productsToMigrate.length; i++) {
         const product = productsToMigrate[i];
-        setCurrentAction(`Creating product ${i + 1}/${productsToMigrate.length}: ${product.title}`);
+        const productTitle = 'title' in product ? product.title : product.name;
+        setCurrentAction(`Creating product ${i + 1}/${productsToMigrate.length}: ${productTitle}`);
         
         // Navigate to new product page
         sendCommand({
@@ -387,7 +388,7 @@ export default function LiveAutomation() {
         sendCommand({
           type: 'CREATE_PAYHIP_PRODUCT',
           data: {
-            title: product.title,
+            title: productTitle,
             description: product.description,
             price: product.price,
             images: product.images || []
@@ -398,7 +399,7 @@ export default function LiveAutomation() {
         
         // Upload images if available
         if (product.images && product.images.length > 0) {
-          setCurrentAction(`Uploading images for: ${product.title}`);
+          setCurrentAction(`Uploading images for: ${productTitle}`);
           sendCommand({
             type: 'UPLOAD_PRODUCT_IMAGES',
             data: {
@@ -410,7 +411,7 @@ export default function LiveAutomation() {
         }
         
         // Submit the product
-        setCurrentAction(`Publishing product: ${product.title}`);
+        setCurrentAction(`Publishing product: ${productTitle}`);
         sendCommand({
           type: 'SUBMIT_PRODUCT',
           data: {}
