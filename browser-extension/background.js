@@ -1,154 +1,221 @@
-// Background service worker for Portify automation
-let connections = new Map();
-let automationSessions = new Map();
-let persistentSessions = new Map(); // Store session data persistently
+// Background service worker for Portify automation with persistent storage
+const SUPABASE_URL = 'https://yvvqfcwhskthbbjspcvi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2dnFmY3doc2t0aGJianNwY3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2OTgwNzAsImV4cCI6MjA2MDI3NDA3MH0.T-DAvL0-4pEWF0QSaM3nQcgJhou8gUQHeKK-vMV7KIk';
 
-// Handle WebRTC signaling between web app and extension
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === 'portify-automation') {
-    let sessionId = null;
-    
-    port.onMessage.addListener(async (message) => {
-      try {
-        switch (message.type) {
-          case 'INIT':
-            if (message.reconnect && message.sessionId) {
-              sessionId = message.sessionId;
-              connections.set(sessionId, port);
-              // Restore persistent session data if it exists
-              if (persistentSessions.has(sessionId)) {
-                const sessionData = persistentSessions.get(sessionId);
-                port.postMessage({ type: 'SESSION_RECONNECTED', sessionId, data: sessionData });
-              } else {
-                port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
-              }
-            } else {
-              sessionId = generateSessionId();
-              connections.set(sessionId, port);
-              // Create persistent session entry
-              persistentSessions.set(sessionId, { created: Date.now(), active: true });
-              port.postMessage({ type: 'SESSION_CREATED', sessionId });
-            }
-            break;
-          case 'RECONNECT_SESSION':
-            // Backwards compatibility
-            sessionId = message.sessionId;
-            connections.set(sessionId, port);
-            port.postMessage({ type: 'SESSION_RECONNECTED', sessionId });
-            break;
-          case 'START_SCREEN_CAPTURE':
-            await startScreenCapture(sessionId, message.tabId);
-            break;
-          case 'AUTOMATION_COMMAND':
-            await executeAutomationCommand(sessionId, message.command);
-            break;
-          case 'WEBRTC_OFFER':
-            await handleWebRTCOffer(sessionId, message.offer);
-            break;
-          case 'WEBRTC_ANSWER':
-            await handleWebRTCAnswer(sessionId, message.answer);
-            break;
-          case 'ICE_CANDIDATE':
-            await handleICECandidate(sessionId, message.candidate);
-            break;
-        }
-      } catch (error) {
-        port.postMessage({ type: 'ERROR', error: error.message });
-      }
-    });
-    
-    port.onDisconnect.addListener(() => {
-      if (sessionId) {
-        connections.delete(sessionId);
-        // Keep persistent session data for reconnection
-        if (persistentSessions.has(sessionId)) {
-          const sessionData = persistentSessions.get(sessionId);
-          sessionData.lastDisconnect = Date.now();
-          persistentSessions.set(sessionId, sessionData);
-        }
-      }
-    });
-  }
-});
-
-async function startScreenCapture(sessionId, tabId) {
-  try {
-    // Use the newer chrome.tabCapture.capture API properly
-    const stream = await chrome.tabCapture.capture({
-      audio: false,
-      video: true
-    });
-    
-    const port = connections.get(sessionId);
-    if (port) {
-      port.postMessage({ 
-        type: 'SCREEN_CAPTURE_STARTED', 
-        streamId: stream ? stream.id : null 
-      });
-    }
-  } catch (error) {
-    console.error('Screen capture failed:', error);
-    const port = connections.get(sessionId);
-    if (port) {
-      port.postMessage({ type: 'ERROR', error: 'Screen capture failed: ' + error.message });
-    }
-  }
+// Persistent session management
+async function getSession() {
+  const result = await chrome.storage.local.get(['portifySession']);
+  return result.portifySession || null;
 }
 
-async function executeAutomationCommand(sessionId, command) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: runAutomationCommand,
-    args: [command]
-  });
+async function saveSession(session) {
+  await chrome.storage.local.set({ portifySession: session });
+  console.log('[Background] Session saved:', session.sessionId);
 }
 
-function runAutomationCommand(command) {
-  // This function runs in the page context
-  window.postMessage({ 
-    type: 'PORTIFY_AUTOMATION_COMMAND', 
-    command 
-  }, '*');
+async function clearSession() {
+  await chrome.storage.local.remove(['portifySession']);
+  console.log('[Background] Session cleared');
 }
 
-async function handleWebRTCOffer(sessionId, offer) {
-  // Forward WebRTC signaling to content script
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  await chrome.tabs.sendMessage(tab.id, {
-    type: 'WEBRTC_OFFER',
-    offer,
-    sessionId
-  });
-}
-
-async function handleWebRTCAnswer(sessionId, answer) {
-  const port = connections.get(sessionId);
-  if (port) {
-    port.postMessage({ type: 'WEBRTC_ANSWER', answer });
-  }
-}
-
-async function handleICECandidate(sessionId, candidate) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  await chrome.tabs.sendMessage(tab.id, {
-    type: 'ICE_CANDIDATE',
-    candidate,
-    sessionId
-  });
-}
-
+// Generate unique session ID
 function generateSessionId() {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// Add method to clear persistent session (called when user explicitly disconnects)
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'CLEAR_PERSISTENT_SESSION' && message.sessionId) {
-    persistentSessions.delete(message.sessionId);
-    automationSessions.delete(message.sessionId);
-    connections.delete(message.sessionId);
-    sendResponse({ cleared: true });
+// Create session in Supabase
+async function createSupabaseSession(sessionId) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/extension_sessions`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        session_id: sessionId,
+        status: 'waiting',
+        webrtc_offer: null,
+        webrtc_answer: null,
+        ice_candidates: []
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create session: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('[Background] Supabase session created:', data);
+    return data[0];
+  } catch (error) {
+    console.error('[Background] Error creating Supabase session:', error);
+    throw error;
   }
+}
+
+// Update session in Supabase
+async function updateSupabaseSession(sessionId, updates) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/extension_sessions?session_id=eq.${sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update session: ${response.status}`);
+    }
+    
+    console.log('[Background] Supabase session updated');
+    return true;
+  } catch (error) {
+    console.error('[Background] Error updating Supabase session:', error);
+    throw error;
+  }
+}
+
+// Poll for WebRTC offer from web app
+async function pollForOffer(sessionId) {
+  console.log('[Background] Starting to poll for offer...');
+  
+  const maxAttempts = 120; // 2 minutes
+  let attempts = 0;
+  
+  while (attempts < maxAttempts) {
+    try {
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/extension_sessions?session_id=eq.${sessionId}&select=webrtc_offer,status`,
+        {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data[0]?.webrtc_offer) {
+          console.log('[Background] Offer received from web app!');
+          return data[0].webrtc_offer;
+        }
+      }
+    } catch (error) {
+      console.error('[Background] Poll error:', error);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    attempts++;
+  }
+  
+  throw new Error('Timeout waiting for offer');
+}
+
+// Handle messages from popup and content scripts
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('[Background] Message received:', message.type);
+  
+  (async () => {
+    try {
+      switch (message.type) {
+        case 'GET_SESSION':
+          const session = await getSession();
+          sendResponse({ session });
+          break;
+          
+        case 'CREATE_SESSION':
+          const sessionId = generateSessionId();
+          await createSupabaseSession(sessionId);
+          const newSession = {
+            sessionId,
+            status: 'waiting',
+            createdAt: Date.now()
+          };
+          await saveSession(newSession);
+          sendResponse({ session: newSession });
+          break;
+          
+        case 'START_POLLING':
+          // Start polling for offer in background
+          pollForOffer(message.sessionId).then(async (offer) => {
+            // Notify content script about the offer
+            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tabs[0]) {
+              chrome.tabs.sendMessage(tabs[0].id, {
+                type: 'OFFER_RECEIVED',
+                offer: offer,
+                sessionId: message.sessionId
+              });
+            }
+          }).catch(error => {
+            console.error('[Background] Polling failed:', error);
+          });
+          sendResponse({ started: true });
+          break;
+          
+        case 'SAVE_ANSWER':
+          await updateSupabaseSession(message.sessionId, {
+            webrtc_answer: message.answer,
+            status: 'connected'
+          });
+          const currentSession = await getSession();
+          if (currentSession) {
+            currentSession.status = 'connected';
+            await saveSession(currentSession);
+          }
+          sendResponse({ success: true });
+          break;
+          
+        case 'UPDATE_STATUS':
+          await updateSupabaseSession(message.sessionId, {
+            status: message.status
+          });
+          sendResponse({ success: true });
+          break;
+          
+        case 'CLEAR_SESSION':
+          await clearSession();
+          sendResponse({ success: true });
+          break;
+          
+        case 'EXECUTE_AUTOMATION':
+          // Forward automation command to content script
+          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'EXECUTE_AUTOMATION',
+              command: message.command
+            });
+          }
+          sendResponse({ success: true });
+          break;
+          
+        default:
+          sendResponse({ error: 'Unknown message type' });
+      }
+    } catch (error) {
+      console.error('[Background] Error handling message:', error);
+      sendResponse({ error: error.message });
+    }
+  })();
+  
+  return true; // Keep channel open for async response
 });
+
+// Initialize on install
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('[Background] Portify extension installed');
+});
+
+console.log('[Background] Service worker started');
